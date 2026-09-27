@@ -19,3 +19,11 @@ class NodeOut(BaseModel):
 class NavigationResponse(BaseModel):
     path: List[NodeOut]
     total_distance: float
+
+
+class StartLocationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    label: str
+    floor: int

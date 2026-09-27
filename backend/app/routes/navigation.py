@@ -3,8 +3,17 @@ from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.schemas.navigation_schema import NavigationRequest, NavigationResponse
 from app.utils.dijkstra import find_shortest_path, NodeNotFoundError, RouteNotFoundError
+from app.models.node import Node
+from app.schemas.navigation_schema import StartLocationOut
 
 router = APIRouter()
+
+
+@router.get("/nodes", response_model=list[StartLocationOut])
+def list_start_locations(db: Session = Depends(get_db)):
+    """Named graph locations that users can recognize as a starting point."""
+    nodes = db.query(Node).order_by(Node.label, Node.id).all()
+    return [node for node in nodes if node.label and node.label.strip()]
 
 
 @router.post("/", response_model=NavigationResponse)

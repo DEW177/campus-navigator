@@ -1,17 +1,51 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { getRoute } from "../services/mapService";
 
-/** Handles requesting and storing a shortest-path route. */
+/** Cancel obsolete requests so changing a location cannot show an old route. */
 export default function useNavigation() {
   const [path, setPath] = useState([]);
   const [distance, setDistance] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const pending = useRef(null);
 
-  const navigate = useCallback((startNodeId, endNodeId) => {
-    getRoute(startNodeId, endNodeId).then((data) => {
-      setPath(data.path);
-      setDistance(data.total_distance);
-    });
+  const reset = useCallback(() => {
+    pending.current?.abort();
+    pending.current = null;
+    setPath([]);
+    setDistance(null);
+    setLoading(false);
+    setError("");
   }, []);
 
-  return { path, distance, navigate };
+  useEffect(() => () => pending.current?.abort(), []);
+
+  const navigate = useCallback(async (startNodeId, endNodeId) => {
+    reset();
+    const controller = new AbortController();
+    pending.current = controller;
+    setLoading(true);
+    try {
+      const data = await getRoute(startNodeId, endNodeId, controller.signal);
+      if (!controller.signal.aborted) {
+        setPath(data.path);
+        setDistance(data.total_distance);
+      }
+    } catch (err) {
+      if (controller.signal.aborted) return;
+      const code = err.response?.data?.detail?.code;
+      const messages = {
+        NODE_NOT_FOUND: "จุดเริ่มต้นหรือจุดหมายไม่มีในระบบแล้ว กรุณาเลือกใหม่",
+        ROUTE_NOT_FOUND: "ไม่พบเส้นทางจากจุดนี้ไปยังห้องที่เลือก ลองเลือกจุดเริ่มต้นใหม่",
+      };
+      setError(messages[code] || "คำนวณเส้นทางไม่ได้ กรุณาลองอีกครั้ง");
+    } finally {
+      if (!controller.signal.aborted) {
+        pending.current = null;
+        setLoading(false);
+      }
+    }
+  }, [reset]);
+
+  return { path, distance, loading, error, navigate, reset };
 }

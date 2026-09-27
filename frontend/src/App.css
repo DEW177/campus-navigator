@@ -3,3 +3,26 @@
   flex-direction: column;
   min-height: 100vh;
 }
+
+.page {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 16px;
+}
+.page button, .page input, .page select {
+  font: inherit;
+  min-height: 44px;
+  padding: 10px 14px;
+}
+.page button { cursor: pointer; }
+.page button:disabled { cursor: not-allowed; }
+.page :focus-visible { outline: 3px solid #2563eb; outline-offset: 3px; }
+.search-bar { width: 100%; }
+.room-list { display: grid; gap: 16px; margin-top: 20px; }
+.room-card { padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
+.room-card h4 { margin: 0; }
+.start-location-picker { margin: 20px 0 12px; }
+.start-location-picker label { display: block; font-weight: bold; }
+.start-location-picker select { width: 100%; max-width: 100%; }
+.navigation-page form { margin-bottom: 20px; }
+.page [role="alert"] { color: #991b1b; }

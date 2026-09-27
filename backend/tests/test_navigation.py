@@ -1,23 +1,5 @@
 """Exercise real routing, ORM serialization and HTTP errors with a test DB."""
 import pytest
-from fastapi.testclient import TestClient
-from app.main import app
-from app.database.database import get_db
-
-
-@pytest.fixture
-def client(db):
-    def override_db():
-        yield db
-
-    previous_overrides = app.dependency_overrides.copy()
-    app.dependency_overrides[get_db] = override_db
-    try:
-        with TestClient(app) as test_client:
-            yield test_client
-    finally:
-        app.dependency_overrides.clear()
-        app.dependency_overrides.update(previous_overrides)
 
 
 @pytest.mark.parametrize("url", ["/api/navigate", "/api/navigate/"])
@@ -66,3 +48,24 @@ def test_invalid_node_ids(client, field, value):
 
 def test_missing_request_fields(client):
     assert client.post("/api/navigate/", json={}).status_code == 422
+
+
+def test_start_locations_have_names_and_numeric_ids(client, db):
+    from app.models.node import Node
+    db.add_all([
+        Node(id=5, label=None, latitude=16, longitude=102, floor=1),
+        Node(id=6, label="  ", latitude=16, longitude=102, floor=1),
+    ])
+    db.commit()
+    response = client.get("/api/navigate/nodes")
+    assert response.status_code == 200
+    assert response.json() == [
+        {"id": i, "label": f"Node {i}", "floor": 1} for i in range(1, 5)
+    ]
+
+
+def test_no_named_start_locations_returns_empty_list(client, db):
+    from app.models.node import Node
+    db.query(Node).update({Node.label: None})
+    db.commit()
+    assert client.get("/api/navigate/nodes").json() == []
