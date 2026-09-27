@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 
 /** Search input for finding rooms/buildings by name. */
-export default function SearchBar({ onSearch, placeholder = "ค้นหาห้องเรียน หรืออาคาร..." }) {
+export default function SearchBar({ onSearch, placeholder = "พิมพ์ชื่อหรือรหัสห้อง เช่น SC06-301" }) {
   const [value, setValue] = useState("");
 
   const handleChange = (e) => {
@@ -12,6 +12,7 @@ export default function SearchBar({ onSearch, placeholder = "ค้นหาห�
   return (
     <input
       type="text"
+      aria-label="ค้นหาห้องเรียน"
       value={value}
       onChange={handleChange}
       placeholder={placeholder}
