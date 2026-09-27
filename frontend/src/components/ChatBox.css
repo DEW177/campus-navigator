@@ -1,0 +1,15 @@
+.chat-box {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+.chat-history {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+}
