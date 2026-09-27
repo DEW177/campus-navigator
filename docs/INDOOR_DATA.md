@@ -66,12 +66,14 @@ will still be needed when the survey is ready.
 
 ## Current limits
 
-- Users select their own starting point; there is no GPS-based indoor tracking,
-  automatic floor detection, compass guidance or QR start-point flow yet.
+- Outdoor starts use a user-requested device location. Indoor paths begin at the designated
+  entrance, not the GPS fix. There is no indoor tracking, automatic floor detection,
+  compass guidance or QR start-point flow.
 - Directions describe named corridor destinations and floor changes. They do not
   infer left/right from the user's facing direction.
 - Stairs/lift choices constrain graph edges. They do not certify an accessible route.
-- Indoor-to-outdoor and building-to-building transitions are not implemented.
+- Continuous graph routing between indoors/outdoors or multiple buildings is not implemented;
+  outdoor Google Maps directions and the indoor entrance plan are two explicit stages.
 - Map images alone cannot supply walkable paths: the graph must also be surveyed.
 
 ## Verification
@@ -80,3 +82,13 @@ Run `python -m pytest -q backend/tests` from the repository root and
 `CI=true npm test -- --watchAll=false --runInBand` from `frontend/`.
 Tests cover floor transitions, route restrictions, inactive/one-way links, malformed
 data, repeatable migrations/imports, floor selection and cancellation of old requests.
+
+## Designated entrance
+
+`building_entrances` binds one building to an explicit `kind="entrance"` node. For a real
+indoor building this node has a matching floor ID, floor number and in-bounds image coordinates.
+The row's optional latitude/longitude identify this same entrance on the road map. Survey them;
+do not automatically copy the building centre. Null geographic coordinates keep indoor trials
+available without publishing a fake road destination. The DEMO loader creates this row using
+`entrance_node` in its JSON. The migration adds it to older unchanged sample databases and
+preserves existing entrance bindings. See [CURRENT_LOCATION.md](CURRENT_LOCATION.md).

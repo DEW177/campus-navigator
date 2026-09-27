@@ -22,3 +22,8 @@ through the same origin. To use a phone on the same Wi-Fi, open
 - `src/pages/` - HomePage, SearchPage, SchedulePage, NavigationPage
 - `src/services/api.js` - calls to the backend API
 - `src/hooks/` - useRooms, useNavigation
+
+The navigation page requests geolocation on a button press, opens outdoor directions in
+Google Maps, and starts indoor plans from the building's designated entrance. Phone geolocation
+requires trusted HTTPS, while desktop localhost also works. See
+[current location setup](../docs/CURRENT_LOCATION.md) for the optional Docker HTTPS gateway.

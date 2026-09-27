@@ -4,3 +4,4 @@ from .node import Node
 from .connection import Connection
 from .room import Room
 from .course import Course
+from .building_entrance import BuildingEntrance

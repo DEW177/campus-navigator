@@ -50,6 +50,11 @@
 .navigation-page h3, .navigation-page p { overflow-wrap: anywhere; }
 .navigation-page form > button { background: #1d4ed8; color: white; border: 0; border-radius: 6px; }
 .navigation-page form > button:disabled { background: #64748b; }
+.outdoor-navigation { margin: 24px 0; }
+.outdoor-navigation .primary-action { display: inline-block; box-sizing: border-box; min-height: 44px; padding: 12px 16px; border: 0; border-radius: 8px; background: #1d4ed8; color: white; font: inherit; text-align: center; text-decoration: none; }
+.outdoor-navigation .primary-action:disabled { background: #64748b; }
+.location-result { margin: 16px 0; padding: 12px; border: 1px solid #93c5fd; border-radius: 8px; background: #eff6ff; }
+.map-caption { color: #475569; font-size: 14px; }
 .demo-notice { margin: 16px 0; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; background: #fffbeb; color: #78350f; }
 .demo-notice p { margin-bottom: 0; }
 .demo-badge { color: #78350f; font-size: 14px; }
@@ -74,6 +79,7 @@
 @media (max-width: 480px) {
   .navigation-page { padding: 20px 12px; }
   .navigation-page form > button { width: 100%; }
+  .outdoor-navigation .primary-action { width: 100%; }
 }
 
 .plan-browser { margin: 18px 0; }

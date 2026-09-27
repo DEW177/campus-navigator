@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "entrance_node": "f1-entry",
   "building": {
     "code": "DEMO",
     "name": "อาคารทดลอง 3 ชั้น",
@@ -43,7 +44,7 @@
       "x": 80,
       "y": 300,
       "label": "ทางเข้าอาคารทดลอง",
-      "kind": "walk"
+      "kind": "entrance"
     },
     {
       "key": "f1-js",

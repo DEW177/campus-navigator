@@ -15,3 +15,4 @@ class Building(Base):
     is_demo = Column(Boolean, nullable=False, default=False, server_default="false")
 
     rooms = relationship("Room", back_populates="building")
+    entrance = relationship("BuildingEntrance", back_populates="building", uselist=False)
