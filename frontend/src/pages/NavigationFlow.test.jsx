@@ -6,6 +6,7 @@ import api from "../services/api";
 jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn() } }));
 jest.mock("../components/CampusMap", () => () => <div />);
 jest.mock("../components/RoutePolyline", () => () => null);
+jest.mock("../components/FloorMap", () => ({ floor, route }) => <div data-testid="floor-map" data-floor={floor.id} data-route={!!route} />);
 const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1 };
 const nodes = [{ id: 1, label: "ทางเข้า SC06", floor: 1 }, { id: 2, label: "ทางแยก", floor: 1 }];
 let box, root;
@@ -38,7 +39,7 @@ test("search -> room -> named start -> numeric IDs and distance", async () => {
   expect(button("ค้นหาเส้นทาง").disabled).toBe(true);
   expect(box.textContent).toContain("ทางเข้า SC06");
   await choose("1"); await submit();
-  expect(api.post).toHaveBeenCalledWith("/navigate/", { start_node_id: 1, end_node_id: 3 }, expect.objectContaining({ signal: expect.anything() }));
+  expect(api.post).toHaveBeenCalledWith("/navigate/", { start_node_id: 1, end_node_id: 3, route_mode: "shortest" }, expect.objectContaining({ signal: expect.anything() }));
   expect(box.textContent).toContain("85.0 เมตร");
   await choose("2"); expect(box.textContent).not.toContain("85.0 เมตร");
 });
@@ -143,4 +144,68 @@ test("search text stays in sync when browser history changes", async () => {
   });
   expect(box.querySelector("input").value).toBe("RC01");
   expect(api.get).toHaveBeenLastCalledWith("/rooms/", expect.objectContaining({ params: { search: "RC01" } }));
+});
+
+const indoorRoom = { ...room, name: "DEMO-301", floor_id: 33, building_id: 2, is_demo: true };
+const indoorFloors = [1, 2, 3].map((number) => ({ id: 30 + number, name: `ชั้น ${number}`, number }));
+const indoorRoute = {
+  map_type: "indoor", is_demo: true, total_distance: 36.5,
+  path: [{ id: 20, floor_id: 31 }, { id: 21, floor_id: 32 }, { id: 3, floor_id: 33 }],
+  segments: [31, 32, 33].map((floor_id) => ({ floor_id, node_ids: [] })),
+  directions: [{ kind: "stairs", text: "ขึ้นบันไดจากชั้น 1 ไปชั้น 2", floor_id: 31, target_floor_id: 32 }],
+};
+function useIndoorApi() {
+  api.get.mockImplementation((url) => Promise.resolve({ data: url === "/navigate/nodes"
+    ? [...nodes, { id: 20, label: "ทางเข้าอาคารทดลอง", floor: 1, floor_id: 31, building_id: 2 },
+        { id: 99, label: "อาคารอื่น", floor: 1, floor_id: 91, building_id: 9 }]
+    : url === "/floors/" ? indoorFloors : indoorRoom }));
+  api.post.mockResolvedValue({ data: indoorRoute });
+}
+
+test("indoor route filters starts, shows demo notice and switches floors from directions", async () => {
+  useIndoorApi();
+  await open("/navigate?room=10");
+  expect(box.textContent).toContain("โหมดทดลอง");
+  const start = box.querySelector("#start-location");
+  expect(start.options).toHaveLength(2);
+  expect(start.textContent).not.toContain("ทางเข้า SC06");
+  expect(start.textContent).not.toContain("อาคารอื่น");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("33");
+  await choose("20"); await submit();
+  expect(box.textContent).toContain("ระยะทางจำลอง: 36.5 เมตร");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("31");
+  await act(async () => button("ดูชั้นที่ไปถึง").click());
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("32");
+  expect(box.querySelector('[aria-pressed="true"]').textContent).toContain("ชั้น 2");
+});
+
+test("changing mode clears a route and sends the selected restriction", async () => {
+  useIndoorApi(); await open("/navigate?room=10"); await choose("20"); await submit();
+  await act(async () => Simulate.change(box.querySelector("#route-mode"), { target: { value: "elevator" } }));
+  expect(box.textContent).not.toContain("36.5 เมตร");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.route).toBe("false");
+  await submit();
+  expect(api.post).toHaveBeenLastCalledWith("/navigate/", { start_node_id: 20, end_node_id: 3, route_mode: "elevator" }, expect.anything());
+});
+
+test("mode change cancels a pending route and ignores its late floor list", async () => {
+  useIndoorApi();
+  let resolve; api.post.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+  await open("/navigate?room=10"); await choose("20"); await submit();
+  const signal = api.post.mock.calls[0][2].signal;
+  await act(async () => Simulate.change(box.querySelector("#route-mode"), { target: { value: "elevator" } }));
+  expect(signal.aborted).toBe(true);
+  await act(async () => resolve({ data: indoorRoute }));
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.route).toBe("false");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("33");
+});
+
+test("floor loading failure offers a retry", async () => {
+  useIndoorApi();
+  const implementation = api.get.getMockImplementation();
+  api.get.mockImplementation((url, options) => url === "/floors/" ? Promise.reject(new Error("offline")) : implementation(url, options));
+  await open("/navigate?room=10");
+  expect(box.querySelector('[role="alert"]').textContent).toContain("โหลดข้อมูลสำหรับนำทางไม่ได้");
+  useIndoorApi(); await act(async () => button("ลองอีกครั้ง").click());
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("33");
 });

@@ -11,7 +11,11 @@ def test_navigation_success(client, url):
     assert data["total_distance"] == 12
     assert data["path"][0] == {
         "id": 1, "latitude": 16.001, "longitude": 102.0, "floor": 1,
+        "floor_id": None, "x": None, "y": None, "label": "Node 1", "kind": "walk",
+        "landmark_description": None, "landmark_image_url": None,
     }
+    assert data["map_type"] == "outdoor"
+    assert data["segments"] == []
 
 
 def test_same_existing_node(client):
@@ -60,7 +64,8 @@ def test_start_locations_have_names_and_numeric_ids(client, db):
     response = client.get("/api/navigate/nodes")
     assert response.status_code == 200
     assert response.json() == [
-        {"id": i, "label": f"Node {i}", "floor": 1} for i in range(1, 5)
+        {"id": i, "label": f"Node {i}", "floor": 1, "floor_id": None,
+         "building_id": None, "building_name": None, "is_demo": False} for i in range(1, 5)
     ]
 
 

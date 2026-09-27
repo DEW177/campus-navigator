@@ -72,5 +72,44 @@ inside the Leaflet map, with labeled start and destination markers. The view
 fits the full route automatically; the "ดูเส้นทางทั้งหมด" button restores this
 view after panning or zooming. A single-node route uses one combined marker.
 Changing the start/destination or a failed request clears the previous overlays.
-This view uses geographic coordinates from the API; indoor floor plans and
-floor-by-floor directions remain future work.
+This geographic view remains available for legacy nodes without `floor_id`.
+Indoor rooms use the floor-plan view below.
+
+## Indoor navigation
+
+- `GET /floors/?building_id=<id>` returns floors ordered by number. Each floor
+  has `id`, `building_id`, `number`, `name`, `image_url`, `width`, `height`, and
+  `meters_per_unit` (the dimensions use image coordinates).
+- `GET /floors/{id}` returns one floor or `404`.
+- Room responses also include `floor_id`, `building_name`, and `is_demo`.
+- Named start locations also include `floor_id`, `building_id`, `building_name`,
+  and `is_demo`. For indoor navigation the UI offers starts in the room's building;
+  outdoor rooms keep the legacy outdoor start list.
+- `POST /navigate/` accepts an optional `route_mode`: `shortest` (default),
+  `stairs` (exclude lift edges), or `elevator` (exclude stair edges). A restricted
+  route with no available connection returns `404 ROUTE_NOT_FOUND`; it does not
+  silently switch modes. The mode is a transition preference, not an accessibility
+  certification. Inactive connections are excluded in all modes.
+
+Indoor responses retain `path` and `total_distance` and add:
+
+| Field | Meaning |
+| --- | --- |
+| `map_type` | `indoor`; legacy routes return `outdoor` |
+| `is_demo` | Whether this route belongs to the demonstration building |
+| `path[].floor_id`, `x`, `y` | Floor identity and top-left-origin image coordinates |
+| `path[].kind`, `label` | Walk point, door, stairs or elevator, and a recognizable name |
+| `floors` | Floor metadata for the visited floors |
+| `segments` | Ordered `{floor_id, node_ids}` sections; separate visits stay separate |
+| `directions` | Ordered text steps with `kind`, `floor_id`, optional `target_floor_id`, `landmark_description`, `image_url` |
+
+The frontend converts image `(x,y)` to Leaflet Simple CRS `[height-y,x]`. It draws
+only segments for the selected floor, never a line between floors. Clicking a
+transition step selects its target floor. Floor images and landmark illustrations
+are served at the API server's `/static/` path (outside the `/api` prefix).
+
+Malformed map geometry, unsupported indoor/outdoor mixing, invalid floor
+transitions or invalid edge weights return `409` with
+`detail.code = "INVALID_MAP_DATA"`. Invalid route modes return `422`.
+Distances in the demo include simulated vertical travel; they are not travel-time
+estimates. No automatic indoor location tracking is provided.

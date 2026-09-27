@@ -2,10 +2,12 @@
 FastAPI application entry point.
 Run with: uvicorn app.main:app --reload
 """
+from pathlib import Path
+from fastapi.staticfiles import StaticFiles
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import buildings, rooms, navigation, courses, chat
+from app.routes import buildings, rooms, navigation, courses, chat, floors
 
 app = FastAPI(
     title="Campus Navigator API",
@@ -22,6 +24,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/static", StaticFiles(directory=Path(__file__).parent / "static"), name="static")
+app.include_router(floors.router, prefix="/api/floors", tags=["Floors"])
 app.include_router(buildings.router, prefix="/api/buildings", tags=["Buildings"])
 app.include_router(rooms.router, prefix="/api/rooms", tags=["Rooms"])
 app.include_router(navigation.router, prefix="/api/navigate", tags=["Navigation"])

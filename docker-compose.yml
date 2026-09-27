@@ -13,6 +13,11 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./database/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql
       - ./database/seed_data.sql:/docker-entrypoint-initdb.d/2-seed.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U user -d campus_navigator"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
 
   backend:
     build: ./backend
@@ -20,8 +25,10 @@ services:
       - "8000:8000"
     environment:
       DATABASE_URL: postgresql://user:password@db:5432/campus_navigator
+    command: ["sh", "-c", "python -m app.migrations.upgrade && python -m app.database.load_demo && exec uvicorn app.main:app --host 0.0.0.0 --port 8000"]
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 
   frontend:
     build: ./frontend

@@ -10,6 +10,7 @@ class Room(Base):
     name = Column(String, nullable=False)       # e.g. "SC06-301"
     floor = Column(Integer, default=1)
     building_id = Column(Integer, ForeignKey("buildings.id"))
+    floor_id = Column(Integer, ForeignKey("floors.id"), nullable=True)
     node_id = Column(Integer, ForeignKey("nodes.id"), nullable=True)
 
     building = relationship("Building", back_populates="rooms")

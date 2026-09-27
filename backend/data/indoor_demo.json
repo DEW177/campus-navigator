@@ -1,0 +1,531 @@
+{
+  "version": 1,
+  "building": {
+    "code": "DEMO",
+    "name": "อาคารทดลอง 3 ชั้น",
+    "latitude": 0,
+    "longitude": 0,
+    "is_demo": true
+  },
+  "floors": [
+    {
+      "key": "f1",
+      "number": 1,
+      "name": "ชั้น 1",
+      "image_url": "/static/floorplans/demo-floor-1.svg",
+      "width": 1000,
+      "height": 600,
+      "meters_per_unit": 0.05
+    },
+    {
+      "key": "f2",
+      "number": 2,
+      "name": "ชั้น 2",
+      "image_url": "/static/floorplans/demo-floor-2.svg",
+      "width": 1000,
+      "height": 600,
+      "meters_per_unit": 0.05
+    },
+    {
+      "key": "f3",
+      "number": 3,
+      "name": "ชั้น 3",
+      "image_url": "/static/floorplans/demo-floor-3.svg",
+      "width": 1000,
+      "height": 600,
+      "meters_per_unit": 0.05
+    }
+  ],
+  "nodes": [
+    {
+      "key": "f1-entry",
+      "floor": "f1",
+      "x": 80,
+      "y": 300,
+      "label": "ทางเข้าอาคารทดลอง",
+      "kind": "walk"
+    },
+    {
+      "key": "f1-js",
+      "floor": "f1",
+      "x": 120,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f1-j1",
+      "floor": "f1",
+      "x": 350,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f1-j2",
+      "floor": "f1",
+      "x": 550,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f1-j3",
+      "floor": "f1",
+      "x": 750,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f1-jl",
+      "floor": "f1",
+      "x": 880,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f1-stairs",
+      "floor": "f1",
+      "x": 120,
+      "y": 240,
+      "label": "หน้าบันได ชั้น 1",
+      "kind": "stairs",
+      "landmark_description": "บันไดฝั่งซ้ายในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-stairs.svg"
+    },
+    {
+      "key": "f1-lift",
+      "floor": "f1",
+      "x": 880,
+      "y": 240,
+      "label": "หน้าลิฟต์ ชั้น 1",
+      "kind": "elevator",
+      "landmark_description": "ลิฟต์ฝั่งขวาในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-elevator.svg"
+    },
+    {
+      "key": "f1-room1",
+      "floor": "f1",
+      "x": 350,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-101",
+      "kind": "door"
+    },
+    {
+      "key": "f1-room2",
+      "floor": "f1",
+      "x": 550,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-102",
+      "kind": "door"
+    },
+    {
+      "key": "f1-room3",
+      "floor": "f1",
+      "x": 750,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-103",
+      "kind": "door"
+    },
+    {
+      "key": "f2-entry",
+      "floor": "f2",
+      "x": 80,
+      "y": 300,
+      "label": "โถงชั้น 2",
+      "kind": "walk"
+    },
+    {
+      "key": "f2-js",
+      "floor": "f2",
+      "x": 120,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f2-j1",
+      "floor": "f2",
+      "x": 350,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f2-j2",
+      "floor": "f2",
+      "x": 550,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f2-j3",
+      "floor": "f2",
+      "x": 750,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f2-jl",
+      "floor": "f2",
+      "x": 880,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f2-stairs",
+      "floor": "f2",
+      "x": 120,
+      "y": 240,
+      "label": "หน้าบันได ชั้น 2",
+      "kind": "stairs",
+      "landmark_description": "บันไดฝั่งซ้ายในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-stairs.svg"
+    },
+    {
+      "key": "f2-lift",
+      "floor": "f2",
+      "x": 880,
+      "y": 240,
+      "label": "หน้าลิฟต์ ชั้น 2",
+      "kind": "elevator",
+      "landmark_description": "ลิฟต์ฝั่งขวาในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-elevator.svg"
+    },
+    {
+      "key": "f2-room1",
+      "floor": "f2",
+      "x": 350,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-201",
+      "kind": "door"
+    },
+    {
+      "key": "f2-room2",
+      "floor": "f2",
+      "x": 550,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-202",
+      "kind": "door"
+    },
+    {
+      "key": "f2-room3",
+      "floor": "f2",
+      "x": 750,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-203",
+      "kind": "door"
+    },
+    {
+      "key": "f3-entry",
+      "floor": "f3",
+      "x": 80,
+      "y": 300,
+      "label": "โถงชั้น 3",
+      "kind": "walk"
+    },
+    {
+      "key": "f3-js",
+      "floor": "f3",
+      "x": 120,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f3-j1",
+      "floor": "f3",
+      "x": 350,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f3-j2",
+      "floor": "f3",
+      "x": 550,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f3-j3",
+      "floor": "f3",
+      "x": 750,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f3-jl",
+      "floor": "f3",
+      "x": 880,
+      "y": 300,
+      "label": null,
+      "kind": "walk"
+    },
+    {
+      "key": "f3-stairs",
+      "floor": "f3",
+      "x": 120,
+      "y": 240,
+      "label": "หน้าบันได ชั้น 3",
+      "kind": "stairs",
+      "landmark_description": "บันไดฝั่งซ้ายในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-stairs.svg"
+    },
+    {
+      "key": "f3-lift",
+      "floor": "f3",
+      "x": 880,
+      "y": 240,
+      "label": "หน้าลิฟต์ ชั้น 3",
+      "kind": "elevator",
+      "landmark_description": "ลิฟต์ฝั่งขวาในอาคารจำลอง",
+      "landmark_image_url": "/static/landmarks/demo-elevator.svg"
+    },
+    {
+      "key": "f3-room1",
+      "floor": "f3",
+      "x": 350,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-301",
+      "kind": "door"
+    },
+    {
+      "key": "f3-room2",
+      "floor": "f3",
+      "x": 550,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-302",
+      "kind": "door"
+    },
+    {
+      "key": "f3-room3",
+      "floor": "f3",
+      "x": 750,
+      "y": 240,
+      "label": "ประตูห้อง DEMO-303",
+      "kind": "door"
+    }
+  ],
+  "connections": [
+    {
+      "source": "f1-entry",
+      "target": "f1-js",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-js",
+      "target": "f1-j1",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j1",
+      "target": "f1-j2",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j2",
+      "target": "f1-j3",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j3",
+      "target": "f1-jl",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-js",
+      "target": "f1-stairs",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-jl",
+      "target": "f1-lift",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j1",
+      "target": "f1-room1",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j2",
+      "target": "f1-room2",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-j3",
+      "target": "f1-room3",
+      "kind": "walk"
+    },
+    {
+      "source": "f1-stairs",
+      "target": "f2-stairs",
+      "kind": "stairs",
+      "weight": 7.0
+    },
+    {
+      "source": "f1-lift",
+      "target": "f2-lift",
+      "kind": "elevator",
+      "weight": 3.0
+    },
+    {
+      "source": "f2-entry",
+      "target": "f2-js",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-js",
+      "target": "f2-j1",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j1",
+      "target": "f2-j2",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j2",
+      "target": "f2-j3",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j3",
+      "target": "f2-jl",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-js",
+      "target": "f2-stairs",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-jl",
+      "target": "f2-lift",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j1",
+      "target": "f2-room1",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j2",
+      "target": "f2-room2",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-j3",
+      "target": "f2-room3",
+      "kind": "walk"
+    },
+    {
+      "source": "f2-stairs",
+      "target": "f3-stairs",
+      "kind": "stairs",
+      "weight": 7.0
+    },
+    {
+      "source": "f2-lift",
+      "target": "f3-lift",
+      "kind": "elevator",
+      "weight": 3.0
+    },
+    {
+      "source": "f3-entry",
+      "target": "f3-js",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-js",
+      "target": "f3-j1",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j1",
+      "target": "f3-j2",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j2",
+      "target": "f3-j3",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j3",
+      "target": "f3-jl",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-js",
+      "target": "f3-stairs",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-jl",
+      "target": "f3-lift",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j1",
+      "target": "f3-room1",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j2",
+      "target": "f3-room2",
+      "kind": "walk"
+    },
+    {
+      "source": "f3-j3",
+      "target": "f3-room3",
+      "kind": "walk"
+    }
+  ],
+  "rooms": [
+    {
+      "name": "DEMO-101",
+      "node": "f1-room1"
+    },
+    {
+      "name": "DEMO-102",
+      "node": "f1-room2"
+    },
+    {
+      "name": "DEMO-103",
+      "node": "f1-room3"
+    },
+    {
+      "name": "DEMO-201",
+      "node": "f2-room1"
+    },
+    {
+      "name": "DEMO-202",
+      "node": "f2-room2"
+    },
+    {
+      "name": "DEMO-203",
+      "node": "f2-room3"
+    },
+    {
+      "name": "DEMO-301",
+      "node": "f3-room1"
+    },
+    {
+      "name": "DEMO-302",
+      "node": "f3-room2"
+    },
+    {
+      "name": "DEMO-303",
+      "node": "f3-room3"
+    }
+  ]
+}

@@ -5,7 +5,8 @@ export default function RoomCard({ room, onSelect }) {
   return (
     <article className="room-card">
       <h4>{room.name}</h4>
-      <p>ชั้น {room.floor}</p>
+      <p>{room.building_name && `${room.building_name} · `}ชั้น {room.floor}</p>
+      {room.is_demo && <p className="demo-badge">ข้อมูลจำลองสำหรับทดลองใช้งาน</p>}
       {room.node_id ? (
         <button type="button" onClick={() => onSelect?.(room)} disabled={!onSelect}>
           ไปห้องนี้
