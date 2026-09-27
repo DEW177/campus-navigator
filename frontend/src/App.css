@@ -26,3 +26,22 @@
 .start-location-picker select { width: 100%; max-width: 100%; }
 .navigation-page form { margin-bottom: 20px; }
 .page [role="alert"] { color: #991b1b; }
+
+.home-page { max-width: 720px; }
+.home-intro { margin-bottom: 24px; }
+.home-brand { color: #475569; font-weight: 600; margin: 0 0 12px; }
+.home-intro h1 { font-size: clamp(28px, 6vw, 40px); margin: 0 0 12px; }
+.home-intro p { line-height: 1.6; }
+.home-search label { display: block; font-weight: 600; margin-bottom: 8px; }
+.home-search .search-bar { border: 2px solid #64748b; border-radius: 8px; min-height: 52px; }
+.home-page section h2 { font-size: 20px; margin-top: 28px; }
+.home-page .room-card { background: white; overflow-wrap: anywhere; }
+.home-page .room-card button {
+  background: #1d4ed8;
+  color: white;
+  border: 0;
+  border-radius: 6px;
+  width: 100%;
+}
+.home-page .room-card button:hover { background: #1e40af; }
+.home-footer { margin-top: 32px; padding-top: 16px; }

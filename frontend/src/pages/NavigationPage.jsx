@@ -10,6 +10,8 @@ import { getStartLocations } from "../services/mapService";
 export default function NavigationPage() {
   const [params] = useSearchParams();
   const roomId = params.get("room");
+  const searchQuery = params.get("q");
+  const searchUrl = searchQuery ? `/?${new URLSearchParams({ q: searchQuery })}` : "/";
   const validRoomId = /^[1-9]\d*$/.test(roomId || "") && Number.isSafeInteger(Number(roomId));
   const [room, setRoom] = useState(null);
   const [locations, setLocations] = useState([]);
@@ -64,7 +66,7 @@ export default function NavigationPage() {
   return (
     <div className="page navigation-page">
       <h2>นำทางไปห้องเรียน</h2>
-      <Link to="/search">เลือกห้องอื่น</Link>
+      <Link to={searchUrl}>เลือกห้องอื่น</Link>
       {!validRoomId && <p>กรุณาค้นหาและเลือกห้องที่ต้องการไปก่อน</p>}
       {loading && <p role="status">กำลังโหลดห้องและจุดเริ่มต้น...</p>}
       {loadError && <div role="alert"><p>{loadError}</p><button onClick={() => setAttempt((n) => n + 1)}>ลองอีกครั้ง</button></div>}
