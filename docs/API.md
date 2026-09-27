@@ -17,6 +17,31 @@ Base URL: `http://localhost:8000/api`
   ```
   Returns the shortest path (Dijkstra's Algorithm) as a list of nodes plus total distance in meters.
 
+  Node IDs must be positive JSON integers (not strings or booleans).
+  A successful response has this shape:
+  ```json
+  {
+    "path": [{ "id": 1, "latitude": 16.4735, "longitude": 102.8236, "floor": 1 }],
+    "total_distance": 0.0
+  }
+  ```
+  When both IDs identify the same existing node, the path contains that node
+  and the distance is zero, even if that node has no connections.
+
+  Errors:
+  - `404`, `detail.code = "NODE_NOT_FOUND"`: an endpoint does not exist;
+    `detail.node_ids` lists the missing IDs.
+  - `404`, `detail.code = "ROUTE_NOT_FOUND"`: both endpoints exist but are disconnected.
+  - `422`: a required ID is missing or is not a positive integer.
+
+  The two `404` errors include a Thai `detail.message` for display.
+  Example:
+  ```json
+  { "detail": { "code": "ROUTE_NOT_FOUND", "message": "ไม่พบเส้นทางเชื่อมระหว่างจุดเริ่มต้นกับจุดหมาย" } }
+  ```
+  Clients should check the HTTP status and `detail.code` before using `path`.
+  Unreachable routes do not return an infinite distance.
+
 ## Courses
 - `GET /courses` - list all courses with their room locations
 
