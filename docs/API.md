@@ -61,3 +61,12 @@ Base URL: `http://localhost:8000/api`
 - Changing the start or destination clears the previous route; loading and routing failures are shown in Thai.
 
 This step connects room search and start selection to the navigation API. Drawing the route on the map and moving search to the home page are separate follow-up steps.
+
+## Route map display
+After a successful navigation request, the frontend renders the ordered path
+inside the Leaflet map, with labeled start and destination markers. The view
+fits the full route automatically; the "ดูเส้นทางทั้งหมด" button restores this
+view after panning or zooming. A single-node route uses one combined marker.
+Changing the start/destination or a failed request clears the previous overlays.
+This view uses geographic coordinates from the API; indoor floor plans and
+floor-by-floor directions remain future work.

@@ -9,7 +9,7 @@ import "./CampusMap.css";
  *  - center: [lat, lng]
  *  - markers: [{ id, name, latitude, longitude }]
  */
-export default function CampusMap({ center = [16.4419, 102.8360], markers = [] }) {
+export default function CampusMap({ center = [16.4735, 102.8236], markers = [], children }) {
   return (
     <div className="campus-map">
       <MapContainer center={center} zoom={17} style={{ height: "100%", width: "100%" }}>
@@ -22,6 +22,7 @@ export default function CampusMap({ center = [16.4419, 102.8360], markers = [] }
             <Popup>{m.name}</Popup>
           </Marker>
         ))}
+        {children}
       </MapContainer>
     </div>
   );
