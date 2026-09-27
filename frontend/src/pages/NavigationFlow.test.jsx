@@ -105,9 +105,12 @@ test("entrance-only coverage stays explicit when using current location", async 
 
 test.each([[1, "ยังไม่ได้รับอนุญาต"], [2, "หาตำแหน่งไม่ได้"], [3, "หาตำแหน่งนานเกินไป"]])("GPS failure %s has retry and preserves building browsing", async (code, message) => {
   geolocation.getCurrentPosition.mockImplementationOnce((success, fail) => fail({ code }));
+  if (code !== 1) geolocation.getCurrentPosition.mockImplementationOnce((success, fail) => fail({ code }));
   await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
   expect(box.querySelector('[role="alert"]').textContent).toContain(message);
-  expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
+  const fallback = box.querySelector('a[href*="/maps/dir/"]');
+  if (code === 1) expect(fallback).toBeNull();
+  else expect(new URL(fallback.href).searchParams.has("origin")).toBe(false);
   expect(box.querySelector('a[href*="/maps/search/"]')).not.toBeNull();
   expect(button("ดูผังอาคารทดลอง")).toBeDefined();
   await click("ลองหาตำแหน่งอีกครั้ง");
@@ -129,7 +132,7 @@ test("invalid coordinates cannot be sent to Google Maps", async () => {
   geolocation.getCurrentPosition.mockImplementationOnce((success) => success({ coords: { latitude: NaN, longitude: 102, accuracy: 10 } }));
   await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
   expect(box.textContent).toContain("หาตำแหน่งไม่ได้");
-  expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
+  expect(new URL(box.querySelector('a[href*="/maps/dir/"]').href).searchParams.has("origin")).toBe(false);
 });
 test("inaccurate location is disclosed and can be refreshed", async () => {
   geolocation.getCurrentPosition.mockImplementationOnce((success) => success({ coords: { ...deviceFix.coords, accuracy: 1500 } }));
@@ -336,4 +339,72 @@ test("closing a loading plan ignores late data", async () => {
   await click("ดูผังอาคารทดลอง"); const signal = api.get.mock.calls.at(-1)[1].signal;
   await click("กลับไปแผนที่"); expect(signal.aborted).toBe(true);
   await act(async () => resolve({ data: [demoBuilding] })); expect(box.querySelector("dialog")).toBeNull();
+});
+
+
+test("a provider that cannot give a precise fix can supply an ordinary recent fix", async () => {
+  geolocation.getCurrentPosition.mockImplementation((success, fail, options) => {
+    if (options.enableHighAccuracy || options.maximumAge === 0) fail({ code: 3 });
+    else success(deviceFix);
+  });
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  expect(box.textContent).toContain("พบตำแหน่งของคุณแล้ว");
+  expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  expect(geolocation.getCurrentPosition.mock.calls[0][2].maximumAge).toBeLessThanOrEqual(30000);
+});
+
+test.each([2, 3])("acquisition failure %s retries once and can recover", async (code) => {
+  let recover;
+  geolocation.getCurrentPosition.mockImplementationOnce((success, fail) => fail({ code }))
+    .mockImplementationOnce((success) => { recover = success; });
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  expect(box.textContent).toContain("กำลังลองอีกวิธี");
+  expect(box.querySelector('[role="alert"]')).toBeNull();
+  expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+  await act(async () => recover(deviceFix));
+  expect(box.textContent).toContain("พบตำแหน่งของคุณแล้ว");
+  expect(new URL(box.querySelector('a[href*="/maps/dir/"]').href).searchParams.get("origin")).toBe("16.2,102.6");
+});
+
+test("two timeouts stop retrying and offer Google Maps its own current origin", async () => {
+  geolocation.getCurrentPosition.mockImplementation((success, fail) => fail({ code: 3 }));
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(2);
+  const link = box.querySelector('a[href*="/maps/dir/"]');
+  expect(link.textContent).toContain("ให้ Google Maps หาตำแหน่งและนำทาง");
+  const params = new URL(link.href).searchParams;
+  expect(params.has("origin")).toBe(false);
+  expect(params.get("destination")).toBe("16.4735,102.8236");
+  expect(params.get("api")).toBe("1");
+  expect(box.textContent).not.toContain("พบตำแหน่งของคุณแล้ว");
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+test("permission denial never triggers a retry or automatic external handoff", async () => {
+  geolocation.getCurrentPosition.mockImplementation((success, fail) => fail({ code: 1 }));
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  expect(geolocation.getCurrentPosition).toHaveBeenCalledTimes(1);
+  expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
+});
+
+test("cancelling the second attempt ignores its late success and error", async () => {
+  let succeed, fail;
+  geolocation.getCurrentPosition.mockImplementationOnce((ok, error) => error({ code: 3 }))
+    .mockImplementationOnce((ok, error) => { succeed = ok; fail = error; });
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  await click("ยกเลิกการหาตำแหน่ง");
+  await act(async () => { succeed(deviceFix); fail({ code: 3 }); });
+  expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
+  expect(box.querySelector('[role="alert"]')).toBeNull();
+});
+
+test("late first-attempt callbacks cannot replace the second attempt", async () => {
+  let oldSuccess, newSuccess;
+  geolocation.getCurrentPosition.mockImplementationOnce((ok, error) => { oldSuccess = ok; error({ code: 3 }); })
+    .mockImplementationOnce((ok) => { newSuccess = ok; });
+  await open("/navigate?room=10"); await click("นำทางจากตำแหน่งของฉัน");
+  await act(async () => oldSuccess({ coords: { ...deviceFix.coords, latitude: 10 } }));
+  expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
+  await act(async () => newSuccess(deviceFix));
+  expect(new URL(box.querySelector('a[href*="/maps/dir/"]').href).searchParams.get("origin")).toBe("16.2,102.6");
 });
