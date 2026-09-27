@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import CampusMap from "../components/CampusMap";
 import RoutePolyline from "../components/RoutePolyline";
 import FloorMap from "../components/FloorMap";
 import FloorSelector from "../components/FloorSelector";
 import DirectionSteps from "../components/DirectionSteps";
+import BuildingPlanBrowser from "../components/BuildingPlanBrowser";
 import StartLocationPicker from "../components/StartLocationPicker";
 import useNavigation from "../hooks/useNavigation";
 import api from "../services/api";
 import { getStartLocations, getFloors } from "../services/mapService";
 
 export default function NavigationPage() {
+  const goTo = useNavigate();
   const [params] = useSearchParams();
   const roomId = params.get("room");
   const searchQuery = params.get("q");
@@ -135,6 +137,11 @@ export default function NavigationPage() {
           <p><span className="route-key route-key--end" aria-hidden="true" />จุดหมาย: {room.name}</p>
           <button type="button" onClick={() => setFitRequest((value) => value + 1)}>{indoor ? "ดูเส้นทางในชั้นนี้" : "ดูเส้นทางทั้งหมด"}</button>
         </div>}
+        <BuildingPlanBrowser key={room.id} destination={room} onSelectRoom={(selected) => {
+          const next = new URLSearchParams({ room: String(selected.id) });
+          if (searchQuery) next.set("q", searchQuery);
+          goTo(`/navigate?${next}`);
+        }} />
         {indoor ? <>
           <h3>แผนผัง{selectedFloor?.name || `ชั้น ${room.floor}`}</h3>
           <FloorSelector floors={floors} value={selectedFloorId} onChange={setSelectedFloorId}

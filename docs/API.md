@@ -9,6 +9,11 @@ Base URL: `http://localhost:8000/api`
 ## Rooms
 - `GET /rooms?search=` - list/search rooms
 - `GET /rooms/{id}` - get a single room
+- `GET /rooms/?building_id=<id>` - list rooms in one building; can be combined with `search`.
+  A building ID must be positive. Results are ordered by floor, room name and ID.
+- Room responses include `map_position: {"x": number, "y": number}` for a mapped indoor door,
+  or `null` when no matching floor coordinates are available. These are image coordinates,
+  not latitude/longitude. The floor browser uses them as selectable room markers.
 
 ## Navigation
 - `POST /navigate`
@@ -113,3 +118,18 @@ transitions or invalid edge weights return `409` with
 `detail.code = "INVALID_MAP_DATA"`. Invalid route modes return `422`.
 Distances in the demo include simulated vertical travel; they are not travel-time
 estimates. No automatic indoor location tracking is provided.
+
+## Browse floor plans from the current page
+
+The home page and outdoor navigation page include a **ดูผังอาคารทดลอง** button.
+It opens a modal on the same page: choose a floor, then select a room from its
+marker popup or the room list. **ไปห้องนี้** opens that room's navigation URL and
+retains the existing search query. Indoor destinations instead show a button with
+their floor and room name, opening the destination floor immediately and highlighting
+its door. Building/floor/room IDs are read from the API rather than hard-coded.
+
+Closing the dialog or pressing Escape preserves the current destination, start,
+route and search. The dialog supports keyboard focus and returns focus to its
+trigger. Loading failures have a retry action; closing cancels pending requests.
+The demo is clearly separate from a selected outdoor destination such as SC06-301.
+This browser does not join outdoor and indoor route graphs or detect arrival.

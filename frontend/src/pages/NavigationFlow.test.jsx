@@ -10,6 +10,11 @@ jest.mock("../components/FloorMap", () => ({ floor, route }) => <div data-testid
 const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1 };
 const nodes = [{ id: 1, label: "ทางเข้า SC06", floor: 1 }, { id: 2, label: "ทางแยก", floor: 1 }];
 let box, root;
+beforeAll(() => {
+  // jsdom lacks native dialog methods; browser QA covers the modal focus behavior.
+  HTMLDialogElement.prototype.showModal = function () { this.setAttribute("open", ""); };
+  HTMLDialogElement.prototype.close = function () { this.removeAttribute("open"); };
+});
 beforeEach(() => {
   global.IS_REACT_ACT_ENVIRONMENT = true;
   jest.resetAllMocks();
@@ -208,4 +213,100 @@ test("floor loading failure offers a retry", async () => {
   expect(box.querySelector('[role="alert"]').textContent).toContain("โหลดข้อมูลสำหรับนำทางไม่ได้");
   useIndoorApi(); await act(async () => button("ลองอีกครั้ง").click());
   expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("33");
+});
+
+const demoBuilding = { id: 2, code: "DEMO", name: "อาคารทดลอง 3 ชั้น", is_demo: true };
+const planRooms = [1, 2, 3].map((number) => ({
+  ...indoorRoom, id: 100 + number, name: `DEMO-${number}01`, floor: number, floor_id: 30 + number,
+  node_id: 200 + number, building_name: demoBuilding.name, map_position: { x: 350, y: 240 },
+}));
+function usePlanApi() {
+  api.get.mockImplementation((url, options) => {
+    if (url === "/buildings/") return Promise.resolve({ data: [demoBuilding] });
+    if (url === "/floors/") return Promise.resolve({ data: indoorFloors });
+    if (url === "/rooms/") return Promise.resolve({ data: options?.params?.building_id ? planRooms : [room] });
+    if (url === "/rooms/10") return Promise.resolve({ data: room });
+    if (url.startsWith("/rooms/")) return Promise.resolve({ data: planRooms.find((item) => String(item.id) === url.split("/").pop()) });
+    if (url === "/navigate/nodes") return Promise.resolve({ data: [...nodes, { id: 20, label: "ทางเข้าอาคารทดลอง", floor: 1, floor_id: 31, building_id: 2 }] });
+    return Promise.reject(new Error("Unknown URL"));
+  });
+}
+
+test("outdoor page opens the demo inline and closing preserves the active route", async () => {
+  usePlanApi();
+  await open("/navigate?room=10&q=SC06"); await choose("1"); await submit();
+  const originalUrl = window.location.href;
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  const dialog = box.querySelector("dialog");
+  expect(dialog.hasAttribute("open")).toBe(true);
+  expect(dialog.textContent).toContain("แยกจากปลายทาง SC06-301");
+  expect(dialog.textContent).toContain("DEMO-101");
+  expect(dialog.textContent).not.toContain("DEMO-301");
+  expect(api.get).toHaveBeenCalledWith("/rooms/", expect.objectContaining({ params: { building_id: 2 } }));
+  await act(async () => button("กลับไปแผนที่").click());
+  expect(box.querySelector("dialog")).toBeNull();
+  expect(window.location.href).toBe(originalUrl);
+  expect(box.querySelector("#start-location").value).toBe("1");
+  expect(box.textContent).toContain("85.0 เมตร");
+  expect(api.post).toHaveBeenCalledTimes(1);
+});
+
+test("floor browser selects a room into navigation while retaining the search", async () => {
+  usePlanApi(); await open("/navigate?room=10&q=SC06");
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  await act(async () => [...box.querySelectorAll("dialog .floor-selector button")].find((b) => b.textContent === "ชั้น 3").click());
+  expect(box.querySelector("dialog").textContent).toContain("DEMO-301");
+  expect(box.querySelector("dialog").textContent).not.toContain("DEMO-101");
+  await act(async () => button("ไปห้องนี้").click());
+  expect(box.querySelector("dialog")).toBeNull();
+  expect(new URLSearchParams(window.location.search).get("room")).toBe("103");
+  expect(new URLSearchParams(window.location.search).get("q")).toBe("SC06");
+  expect(box.textContent).toContain("ปลายทาง: DEMO-301");
+  expect(box.querySelector("#start-location").value).toBe("");
+});
+
+test("indoor destination opens its own floor immediately", async () => {
+  usePlanApi(); await open("/navigate?room=103");
+  await act(async () => button("ดูผังชั้น 3 · ห้อง DEMO-301").click());
+  expect(box.querySelector('dialog [data-testid="floor-map"]').dataset.floor).toBe("33");
+  expect(box.querySelector("dialog").textContent).toContain("ห้องที่เลือกอยู่: DEMO-301");
+  expect(api.get.mock.calls.some(([url]) => url === "/buildings/")).toBe(false);
+});
+
+test("home provides the floor browser without requiring a DEMO search", async () => {
+  usePlanApi(); await open("/?q=SC06");
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  expect(box.querySelector("dialog").textContent).toContain("DEMO-101");
+  await act(async () => button("กลับไปค้นหาห้อง").click());
+  expect(box.querySelector("input").value).toBe("SC06");
+  expect(box.querySelector("dialog")).toBeNull();
+});
+
+test("floor browser can retry loading errors without leaving the map", async () => {
+  usePlanApi(); await open("/navigate?room=10");
+  api.get.mockRejectedValueOnce(new Error("offline"));
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  expect(box.querySelector('dialog [role="alert"]').textContent).toContain("โหลดผังอาคารไม่ได้");
+  await act(async () => button("ลองอีกครั้ง").click());
+  expect(box.querySelector('dialog [data-testid="floor-map"]')).not.toBeNull();
+});
+
+test("missing demo building explains unavailable plans", async () => {
+  usePlanApi(); await open("/navigate?room=10");
+  api.get.mockResolvedValueOnce({ data: [] });
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  expect(box.querySelector('dialog [role="alert"]').textContent).toContain("ยังไม่มีอาคารทดลองให้ดู");
+  expect(box.querySelector('dialog [data-testid="floor-map"]')).toBeNull();
+});
+
+test("closing while loading aborts requests and ignores late results", async () => {
+  usePlanApi(); await open("/navigate?room=10");
+  let resolve; api.get.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
+  await act(async () => button("ดูผังอาคารทดลอง").click());
+  const signal = api.get.mock.calls.at(-1)[1].signal;
+  await act(async () => button("กลับไปแผนที่").click());
+  expect(signal.aborted).toBe(true);
+  await act(async () => resolve({ data: [demoBuilding] }));
+  expect(box.querySelector("dialog")).toBeNull();
+  expect(box.textContent).toContain("ปลายทาง: SC06-301");
 });
