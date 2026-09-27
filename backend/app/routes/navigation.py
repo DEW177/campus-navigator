@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.database.database import get_db
 from app.schemas.navigation_schema import NavigationRequest, NavigationResponse
-from app.utils.dijkstra import find_shortest_path
+from app.utils.dijkstra import find_shortest_path, NodeNotFoundError, RouteNotFoundError
 
 router = APIRouter()
 
@@ -14,5 +14,17 @@ def navigate(request: NavigationRequest, db: Session = Depends(get_db)):
     Body: { "start_node_id": int, "end_node_id": int }
     Returns the shortest path (list of nodes + total distance) using Dijkstra's Algorithm.
     """
-    path, distance = find_shortest_path(db, request.start_node_id, request.end_node_id)
+    try:
+        path, distance = find_shortest_path(db, request.start_node_id, request.end_node_id)
+    except NodeNotFoundError as exc:
+        raise HTTPException(status_code=404, detail={
+            "code": "NODE_NOT_FOUND",
+            "message": "ไม่พบจุดเริ่มต้นหรือจุดหมายที่ระบุ",
+            "node_ids": exc.node_ids,
+        }) from exc
+    except RouteNotFoundError as exc:
+        raise HTTPException(status_code=404, detail={
+            "code": "ROUTE_NOT_FOUND",
+            "message": "ไม่พบเส้นทางเชื่อมระหว่างจุดเริ่มต้นกับจุดหมาย",
+        }) from exc
     return NavigationResponse(path=path, total_distance=distance)
