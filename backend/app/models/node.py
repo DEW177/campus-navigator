@@ -1,4 +1,5 @@
 from sqlalchemy import Column, Integer, Float, String, ForeignKey
+from sqlalchemy.orm import relationship
 from app.database.database import Base
 
 
@@ -13,6 +14,7 @@ class Node(Base):
     floor = Column(Integer, default=1)
 
     floor_id = Column(Integer, ForeignKey("floors.id"), nullable=True)
+    floor_plan = relationship("Floor")
     x = Column(Float, nullable=True)
     y = Column(Float, nullable=True)
     kind = Column(String, nullable=False, default="walk", server_default="walk")

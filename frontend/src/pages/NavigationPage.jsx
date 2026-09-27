@@ -13,37 +13,48 @@ import { getStartLocations, getFloors } from "../services/mapService";
 
 export default function NavigationPage() {
   const goTo = useNavigate();
-  const [params] = useSearchParams();
+  const [params, setParams] = useSearchParams();
   const roomId = params.get("room");
   const searchQuery = params.get("q");
   const searchUrl = searchQuery ? `/?${new URLSearchParams({ q: searchQuery })}` : "/";
   const validRoomId = /^[1-9]\d*$/.test(roomId || "") && Number.isSafeInteger(Number(roomId));
   const [room, setRoom] = useState(null);
   const [locations, setLocations] = useState([]);
-  const [startId, setStartId] = useState("");
+  const startId = params.get("start") || "";
+  const validStartId = /^[1-9]\d*$/.test(startId) && Number.isSafeInteger(Number(startId));
+  const savedMode = params.get("mode") || "shortest";
+  const validMode = ["shortest", "stairs", "elevator"].includes(savedMode);
+  const routeMode = validMode ? savedMode : "shortest";
+  const routeRequested = params.get("route") === "1";
+  const [routeAttempt, setRouteAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
   const [fitRequest, setFitRequest] = useState(0);
   const [floors, setFloors] = useState([]);
-  const [selectedFloorId, setSelectedFloorId] = useState(null);
-  const [routeMode, setRouteMode] = useState("shortest");
   const { path, distance, route, loading: routing, error, navigate, reset } = useNavigation();
   const indoor = room?.floor_id != null;
+  const entranceOnly = room?.navigation_scope === "entrance";
+  const destinationLabel = room?.navigation_label;
+  const selectedStart = validStartId ? locations.find((node) => node.id === Number(startId)) : null;
+  const selectedFloorId = floors.find((floor) => String(floor.id) === params.get("floor"))?.id
+    ?? route?.segments?.[0]?.floor_id ?? room?.floor_id ?? null;
   const selectedFloor = floors.find((floor) => floor.id === selectedFloorId);
-
-  useEffect(() => {
-    if (route?.segments?.length) setSelectedFloorId(route.segments[0].floor_id);
-  }, [route]);
+  const updateChoices = (changes) => setParams((previous) => {
+    const next = new URLSearchParams(previous);
+    Object.entries(changes).forEach(([key, value]) => {
+      if (value == null || value === "") next.delete(key);
+      else next.set(key, String(value));
+    });
+    return next;
+  }, { replace: true });
+  const selectFloor = (floorId) => updateChoices({ floor: floorId });
 
   useEffect(() => {
     const controller = new AbortController();
     setRoom(null);
     setLocations([]);
-    setStartId("");
     setFloors([]);
-    setSelectedFloorId(null);
-    setRouteMode("shortest");
     setLoadError("");
     reset();
     if (!validRoomId) {
@@ -65,7 +76,6 @@ export default function NavigationPage() {
       if (controller.signal.aborted) return;
       setRoom(selectedRoom);
       setFloors(roomFloors);
-      setSelectedFloorId(selectedRoom.floor_id ?? null);
       setLocations(nodes.filter((node) => selectedRoom.floor_id != null
         ? node.building_id === selectedRoom.building_id && node.floor_id != null
         : node.floor_id == null));
@@ -80,10 +90,22 @@ export default function NavigationPage() {
     return () => controller.abort();
   }, [roomId, validRoomId, attempt, reset]);
 
+  // A restored URL reloads current map data and recomputes the route. Only the
+  // choices live in the URL; stale geometry is never restored from storage.
+  useEffect(() => {
+    if (!loading && room?.id === Number(roomId) && room?.navigation_node_id
+        && routeRequested && selectedStart && validMode) {
+      navigate(selectedStart.id, room.navigation_node_id, routeMode);
+    }
+    return reset;
+  }, [loading, room, roomId, routeRequested, selectedStart, validMode, routeMode,
+      routeAttempt, navigate, reset]);
+
   const handleGo = (event) => {
     event.preventDefault();
-    if (!routing && room?.node_id && locations.some((node) => node.id === Number(startId))) {
-      navigate(Number(startId), room.node_id, routeMode);
+    if (!routing && room?.navigation_node_id && selectedStart) {
+      updateChoices({ route: "1", mode: routeMode, floor: null });
+      setRouteAttempt((value) => value + 1);
     }
   };
 
@@ -98,43 +120,52 @@ export default function NavigationPage() {
         <h3>ปลายทาง: {room.name}</h3>
         <p>{room.building_name && `${room.building_name} · `}ชั้น {room.floor}</p>
         {room.is_demo && <aside className="demo-notice" aria-label="ข้อมูลจำลอง">
-          <strong>โหมดทดลอง — อาคารจำลอง 3 ชั้น</strong>
+          <strong>โหมดทดลอง — ข้อมูลตัวอย่าง</strong>
           <p>ห้อง แผนผัง จุดสังเกต และระยะทางเป็นข้อมูลจำลอง สำหรับทดลองระบบเท่านั้น</p>
         </aside>}
-        {!room.node_id ? <p role="status">ห้องนี้ยังไม่มีข้อมูลเส้นทาง กรุณาเลือกห้องอื่น</p> : (
+        {entranceOnly && <aside className="demo-notice" aria-label="ขอบเขตการนำทาง">
+          <strong>นำทางได้ถึงทางเข้าอาคารเท่านั้น</strong>
+          <p>เส้นทางนี้สิ้นสุดที่ {destinationLabel} ยังไม่มีเส้นทางภายในอาคารไปถึงประตูห้อง {room.name} ชั้น {room.floor}</p>
+        </aside>}
+        {!room.navigation_node_id ? <p role="status">ห้องนี้ยังไม่มีข้อมูลเส้นทาง กรุณาเลือกห้องอื่น</p> : (
           locations.length === 0 ? <p role="status">ยังไม่มีจุดเริ่มต้นให้เลือก</p> : (
             <form onSubmit={handleGo}>
-              <StartLocationPicker locations={locations} value={startId} onChange={(value) => {
-                setStartId(value);
+              <StartLocationPicker locations={locations} value={selectedStart ? startId : ""} onChange={(value) => {
                 reset();
-                setSelectedFloorId(room.floor_id ?? null);
+                updateChoices({ start: value, mode: routeMode, route: null, floor: null });
               }} />
               {indoor && <div className="route-mode-picker">
                 <label htmlFor="route-mode">ขึ้นลงชั้นด้วยอะไร?</label>
                 <select id="route-mode" value={routeMode} onChange={(event) => {
-                  setRouteMode(event.target.value);
                   reset();
-                  setSelectedFloorId(room.floor_id);
+                  updateChoices({ mode: event.target.value, route: null, floor: null });
                 }}>
                   <option value="shortest">เลือกเส้นทางสั้นที่สุด</option>
                   <option value="stairs">ใช้บันได</option>
                   <option value="elevator">ใช้ลิฟต์</option>
                 </select>
               </div>}
-              <button type="submit" disabled={!startId || routing}>
+              <button type="submit" disabled={!selectedStart || routing}>
                 {routing ? "กำลังคำนวณ..." : "ค้นหาเส้นทาง"}
               </button>
             </form>
           )
         )}
+        {room.navigation_node_id && startId && !selectedStart && <p role="alert">จุดเริ่มต้นเดิมใช้ไม่ได้แล้ว กรุณาเลือกจุดเริ่มต้นใหม่</p>}
+        {room.navigation_node_id && routeRequested && !startId && <p role="alert">กรุณาเลือกจุดเริ่มต้นเพื่อคำนวณเส้นทางอีกครั้ง</p>}
+        {routeRequested && !validMode && <p role="alert">ตัวเลือกเส้นทางเดิมไม่ถูกต้อง กรุณาเลือกวิธีขึ้นลงชั้นหรือกดค้นหาเส้นทางใหม่</p>}
         {routing && <p role="status">กำลังคำนวณเส้นทาง...</p>}
         {error && <p role="alert">{error}</p>}
         {distance !== null && <p role="status">
-          {distance === 0 ? "จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน" : `${room.is_demo ? "ระยะทางจำลอง" : "ระยะทาง"}: ${distance.toFixed(1)} เมตร`}
+          {distance === 0 ? (entranceOnly
+            ? "จุดเริ่มต้นที่เลือกอยู่ที่ทางเข้าอาคาร ยังไม่ใช่ประตูห้อง"
+            : "จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน")
+            : `${room.is_demo ? "ระยะทางจำลอง" : "ระยะทาง"}: ${distance.toFixed(1)} เมตร`}
         </p>}
         {path.length > 0 && <div className="route-summary">
           <p><span className="route-key route-key--start" aria-hidden="true" />จุดเริ่มต้น: {locations.find((node) => node.id === Number(startId))?.label}</p>
-          <p><span className="route-key route-key--end" aria-hidden="true" />จุดหมาย: {room.name}</p>
+          <p><span className="route-key route-key--end" aria-hidden="true" />จุดหมาย: {destinationLabel}</p>
+          <p>คำนวณจากจุดเริ่มต้นที่เลือก หากเดินไปแล้วให้เปลี่ยนจุดเริ่มต้น</p>
           <button type="button" onClick={() => setFitRequest((value) => value + 1)}>{indoor ? "ดูเส้นทางในชั้นนี้" : "ดูเส้นทางทั้งหมด"}</button>
         </div>}
         <BuildingPlanBrowser key={room.id} destination={room} onSelectRoom={(selected) => {
@@ -144,14 +175,14 @@ export default function NavigationPage() {
         }} />
         {indoor ? <>
           <h3>แผนผัง{selectedFloor?.name || `ชั้น ${room.floor}`}</h3>
-          <FloorSelector floors={floors} value={selectedFloorId} onChange={setSelectedFloorId}
+          <FloorSelector floors={floors} value={selectedFloorId} onChange={selectFloor}
             routeFloorIds={(route?.segments || []).map((segment) => segment.floor_id)} />
           {selectedFloor ? <FloorMap floor={selectedFloor} route={route} fitRequest={fitRequest} />
             : <p role="status">ยังไม่มีแผนผังสำหรับชั้นนี้</p>}
           {path.length > 0 && !route?.segments?.some((segment) => segment.floor_id === selectedFloorId)
             && <p>เส้นทางนี้ไม่ผ่านชั้นที่กำลังดู กดชั้นที่ระบุว่ามีเส้นทาง</p>}
           <DirectionSteps steps={route?.directions || []} onSelectFloor={(floorId) => {
-            setSelectedFloorId(floorId);
+            selectFloor(floorId);
             document.querySelector(".floor-selector")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
           }} />
         </> : <div className="navigation-map" role="region" aria-label="แผนที่เส้นทางไปห้องเรียน">
@@ -159,7 +190,7 @@ export default function NavigationPage() {
             <RoutePolyline
               path={path}
               startLabel={locations.find((node) => node.id === Number(startId))?.label}
-              endLabel={room.name}
+              endLabel={destinationLabel}
               fitRequest={fitRequest}
             />
           </CampusMap>

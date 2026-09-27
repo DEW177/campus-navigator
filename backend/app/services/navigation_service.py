@@ -1,5 +1,5 @@
 import math
-from app.models import Floor, Building, Connection
+from app.models import Floor, Building, Connection, Room
 from app.schemas.navigation_schema import NavigationResponse, RouteSegment
 from app.services.direction_service import build_directions
 from app.utils.dijkstra import find_shortest_path, usable_connection, GraphDataError
@@ -9,7 +9,10 @@ def calculate_route(db, start_id, end_id, route_mode="shortest"):
     path, distance = find_shortest_path(db, start_id, end_id, route_mode)
     floor_ids = {node.floor_id for node in path if node.floor_id is not None}
     if not floor_ids:
-        return NavigationResponse(path=path, total_distance=distance)
+        sample = db.query(Building.id).join(Room, Room.building_id == Building.id).filter(
+            Room.node_id.in_([node.id for node in path]), Building.is_demo.is_(True)
+        ).first()
+        return NavigationResponse(path=path, total_distance=distance, is_demo=sample is not None)
     floors = db.query(Floor).filter(Floor.id.in_(floor_ids)).all()
     floor_by_id = {floor.id: floor for floor in floors}
     for node in path:
