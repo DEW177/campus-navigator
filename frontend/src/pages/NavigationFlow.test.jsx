@@ -6,6 +6,7 @@ import api from "../services/api";
 jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn() } }));
 jest.mock("../components/CampusMap", () => () => <div />);
 jest.mock("../components/LocationMarkers", () => () => null);
+jest.mock("../components/MapStartPicker", () => () => null);
 jest.mock("../components/FloorMap", () => ({ floor, route }) => <div data-testid="floor-map" data-floor={floor.id} data-route={!!route} />);
 const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1,
   navigation_scope: "entrance", navigation_node_id: 3, navigation_label: "ทางเข้า SC06", is_demo: true,
@@ -66,7 +67,7 @@ test("search -> room -> device location without a start picker or node request",
   const link = new URL(box.querySelector('a[href*="/maps/dir/"]').href);
   expect(link.searchParams.get("origin")).toBe("16.2,102.6");
   expect(link.searchParams.get("destination")).toBe("16.4735,102.8236");
-  expect(link.searchParams.has("travelmode")).toBe(false);
+  expect(link.searchParams.get("travelmode")).toBe("walking");
   expect(api.post).not.toHaveBeenCalled(); // arbitrary GPS coordinates are not graph IDs
   expect(window.location.search).not.toMatch(/16\.2|102\.6/);
   expect(localStorage.length + sessionStorage.length).toBe(0);

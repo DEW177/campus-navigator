@@ -119,7 +119,7 @@ export default function NavigationPage() {
           <strong>นำทางได้ถึงทางเข้าอาคารเท่านั้น</strong>
           <p>ยังไม่มีเส้นทางภายในอาคารไปถึงประตูห้อง {room.name} ชั้น {room.floor}</p>
         </aside>}
-        <OutdoorNavigation key={room.id} entrance={entrance} isDemo={room.is_demo} hasIndoorRoute={canRouteIndoors} />
+        <OutdoorNavigation key={room.id} buildingId={room.building_id} entrance={entrance} isDemo={room.is_demo} hasIndoorRoute={canRouteIndoors} />
         <BuildingPlanBrowser key={`plan-${room.id}`} destination={room} onSelectRoom={(selected) => {
           const next = new URLSearchParams({ room: String(selected.id) });
           if (searchQuery) next.set("q", searchQuery);

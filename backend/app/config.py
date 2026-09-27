@@ -13,6 +13,8 @@ class Settings:
     )
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me")
     DEBUG: bool = os.getenv("DEBUG", "True") == "True"
+    GEOAPIFY_API_KEY: str = os.getenv("GEOAPIFY_API_KEY", "").strip()
+    GEOAPIFY_DAILY_REQUEST_LIMIT: int = max(0, int(os.getenv("GEOAPIFY_DAILY_REQUEST_LIMIT", "1000")))
 
 
 settings = Settings()

@@ -4,13 +4,13 @@ export function hasCoordinates(point) {
 }
 
 /** Explicit user click opens Google Maps; the app never invents a road route. */
-export function directionsUrl(position, entrance) {
+export function directionsUrl(position, entrance, mode) {
   if (!hasCoordinates(position) || !hasCoordinates(entrance)) return null;
   const params = new URLSearchParams({
     api: "1", origin: `${position.latitude},${position.longitude}`,
     destination: `${entrance.latitude},${entrance.longitude}`, dir_action: "navigate",
   });
-  // Leave travel mode to Google Maps/user preference: home may be far from campus.
+  if (mode) params.set("travelmode", mode === "drive" ? "driving" : "walking");
   return `https://www.google.com/maps/dir/?${params}`;
 }
 

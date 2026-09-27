@@ -15,7 +15,7 @@ export default function CampusMap({ center = [16.4735, 102.8236], markers = [], 
       <MapContainer center={center} zoom={17} style={{ height: "100%", width: "100%" }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         />
         {markers.map((m) => (
           <Marker key={m.id} position={[m.latitude, m.longitude]}>
