@@ -17,6 +17,7 @@ export default function NavigationPage() {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [fitRequest, setFitRequest] = useState(0);
   const { path, distance, loading: routing, error, navigate, reset } = useNavigation();
 
   useEffect(() => {
@@ -88,9 +89,19 @@ export default function NavigationPage() {
         {distance !== null && <p role="status">
           {distance === 0 ? "จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน" : `ระยะทาง: ${distance.toFixed(1)} เมตร`}
         </p>}
-        <div style={{ height: "500px" }}>
+        {path.length > 0 && <div className="route-summary">
+          <p><span className="route-key route-key--start" aria-hidden="true" />จุดเริ่มต้น: {locations.find((node) => node.id === Number(startId))?.label}</p>
+          <p><span className="route-key route-key--end" aria-hidden="true" />จุดหมาย: {room.name}</p>
+          <button type="button" onClick={() => setFitRequest((value) => value + 1)}>ดูเส้นทางทั้งหมด</button>
+        </div>}
+        <div className="navigation-map" role="region" aria-label="แผนที่เส้นทางไปห้องเรียน">
           <CampusMap markers={[]}>
-            <RoutePolyline path={path} />
+            <RoutePolyline
+              path={path}
+              startLabel={locations.find((node) => node.id === Number(startId))?.label}
+              endLabel={room.name}
+              fitRequest={fitRequest}
+            />
           </CampusMap>
         </div>
       </>}
