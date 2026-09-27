@@ -19,6 +19,12 @@ See `docs/SETUP.md`, or run everything with:
 docker-compose up --build
 ```
 
+Indoor navigation can be tried immediately with the explicitly marked **DEMO**
+building: search `DEMO-301`, start at `ทางเข้าอาคารทดลอง`, and choose stairs or lift.
+It includes 3 simulated floor plans, 9 rooms and step-by-step directions.
+Real campus plans and surveyed paths are still needed before using it on site.
+See [the indoor data guide](docs/INDOOR_DATA.md).
+
 ## Tech stack
 - Backend: Python, FastAPI, SQLAlchemy, PostgreSQL
 - Frontend: React, Leaflet

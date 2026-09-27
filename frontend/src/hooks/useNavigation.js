@@ -5,6 +5,7 @@ import { getRoute } from "../services/mapService";
 export default function useNavigation() {
   const [path, setPath] = useState([]);
   const [distance, setDistance] = useState(null);
+  const [route, setRoute] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const pending = useRef(null);
@@ -14,29 +15,32 @@ export default function useNavigation() {
     pending.current = null;
     setPath([]);
     setDistance(null);
+    setRoute(null);
     setLoading(false);
     setError("");
   }, []);
 
   useEffect(() => () => pending.current?.abort(), []);
 
-  const navigate = useCallback(async (startNodeId, endNodeId) => {
+  const navigate = useCallback(async (startNodeId, endNodeId, routeMode = "shortest") => {
     reset();
     const controller = new AbortController();
     pending.current = controller;
     setLoading(true);
     try {
-      const data = await getRoute(startNodeId, endNodeId, controller.signal);
+      const data = await getRoute(startNodeId, endNodeId, controller.signal, routeMode);
       if (!controller.signal.aborted) {
         setPath(data.path);
         setDistance(data.total_distance);
+        setRoute(data);
       }
     } catch (err) {
       if (controller.signal.aborted) return;
       const code = err.response?.data?.detail?.code;
       const messages = {
         NODE_NOT_FOUND: "จุดเริ่มต้นหรือจุดหมายไม่มีในระบบแล้ว กรุณาเลือกใหม่",
-        ROUTE_NOT_FOUND: "ไม่พบเส้นทางจากจุดนี้ไปยังห้องที่เลือก ลองเลือกจุดเริ่มต้นใหม่",
+        ROUTE_NOT_FOUND: "ไม่พบเส้นทางจากจุดนี้ไปยังห้องที่เลือก ลองเลือกจุดเริ่มต้นหรือวิธีขึ้นลงชั้นใหม่",
+        INVALID_MAP_DATA: "ข้อมูลแผนผังหรือทางเชื่อมยังไม่สมบูรณ์ กรุณาเลือกเส้นทางอื่น",
       };
       setError(messages[code] || "คำนวณเส้นทางไม่ได้ กรุณาลองอีกครั้ง");
     } finally {
@@ -47,5 +51,5 @@ export default function useNavigation() {
     }
   }, [reset]);
 
-  return { path, distance, loading, error, navigate, reset };
+  return { path, distance, route, loading, error, navigate, reset };
 }

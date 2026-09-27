@@ -6,6 +6,7 @@ the shortest path between two nodes. Time complexity: O((V + E) log V)
 when used with a min-heap priority queue.
 """
 import heapq
+import math
 from collections import defaultdict
 from sqlalchemy.orm import Session
 from app.models.node import Node
@@ -24,16 +25,32 @@ class RouteNotFoundError(ValueError):
     """The endpoints exist but no walkable route connects them."""
 
 
-def build_graph(db: Session):
+class GraphDataError(ValueError):
+    """Invalid map data cannot be presented as a trustworthy route."""
+
+
+def usable_connection(conn, route_mode="shortest"):
+    return conn.is_active and not (
+        (route_mode == "stairs" and conn.kind == "elevator") or
+        (route_mode == "elevator" and conn.kind == "stairs")
+    )
+
+
+def build_graph(db: Session, route_mode="shortest"):
     """Build an adjacency list {node_id: [(neighbor_id, weight), ...]} from the DB."""
     graph = defaultdict(list)
     for conn in db.query(Connection).all():
+        if not usable_connection(conn, route_mode):
+            continue
+        if not math.isfinite(conn.weight) or conn.weight < 0:
+            raise GraphDataError("Route weights must be finite and non-negative")
         graph[conn.from_node_id].append((conn.to_node_id, conn.weight))
-        graph[conn.to_node_id].append((conn.from_node_id, conn.weight))  # undirected
+        if conn.bidirectional:
+            graph[conn.to_node_id].append((conn.from_node_id, conn.weight))
     return graph
 
 
-def find_shortest_path(db: Session, start_id: int, end_id: int):
+def find_shortest_path(db: Session, start_id: int, end_id: int, route_mode="shortest"):
     """
     Run Dijkstra's Algorithm from start_id to end_id.
     Returns (path: List[Node], total_distance: float).
@@ -49,7 +66,7 @@ def find_shortest_path(db: Session, start_id: int, end_id: int):
     if start_id == end_id:
         return [endpoints_by_id[start_id]], 0.0
 
-    graph = build_graph(db)
+    graph = build_graph(db, route_mode)
     distances = {start_id: 0}
     previous = {}
     visited = set()

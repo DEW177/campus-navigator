@@ -45,3 +45,33 @@
 }
 .home-page .room-card button:hover { background: #1e40af; }
 .home-footer { margin-top: 32px; padding-top: 16px; }
+
+.navigation-page { width: 100%; max-width: 960px; }
+.navigation-page h3, .navigation-page p { overflow-wrap: anywhere; }
+.navigation-page form > button { background: #1d4ed8; color: white; border: 0; border-radius: 6px; }
+.navigation-page form > button:disabled { background: #64748b; }
+.demo-notice { margin: 16px 0; padding: 16px; border: 1px solid #f59e0b; border-radius: 8px; background: #fffbeb; color: #78350f; }
+.demo-notice p { margin-bottom: 0; }
+.demo-badge { color: #78350f; font-size: 14px; }
+.route-mode-picker { margin: 12px 0 16px; }
+.route-mode-picker label { display: block; font-weight: bold; margin-bottom: 8px; }
+.route-mode-picker select { width: 100%; }
+.floor-selector { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; scroll-margin-top: 16px; }
+.floor-selector button { border: 1px solid #94a3b8; border-radius: 8px; background: white; }
+.floor-selector button[aria-pressed="true"] { background: #1e40af; color: white; border-color: #1e40af; }
+.floor-route-hint { font-size: 12px; }
+.indoor-map .leaflet-container { background: #e2e8f0; border: 1px solid #94a3b8; border-radius: 8px; }
+.direction-steps { margin: 24px 0; }
+.direction-steps > p { color: #475569; }
+.direction-steps ol { padding-left: 28px; }
+.direction-step { padding: 8px 8px 16px; border-bottom: 1px solid #cbd5e1; }
+.direction-step::marker { font-weight: bold; }
+.direction-step--stairs, .direction-step--elevator { background: #eff6ff; }
+.direction-step button { margin-bottom: 8px; }
+.direction-step details { margin-top: 8px; }
+.direction-step summary { cursor: pointer; min-height: 44px; padding: 10px 0; color: #1e40af; }
+.direction-step img { display: block; max-width: 100%; width: 280px; height: auto; }
+@media (max-width: 480px) {
+  .navigation-page { padding: 20px 12px; }
+  .navigation-page form > button { width: 100%; }
+}
