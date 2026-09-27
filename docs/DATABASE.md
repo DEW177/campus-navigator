@@ -1,13 +1,14 @@
 # Database Schema
 
 `database/schema.sql` is the legacy outdoor bootstrap. The current schema is that
-bootstrap plus `backend/app/migrations/versions/v001_indoor.py`. Run
+bootstrap plus the ordered migrations in `backend/app/migrations/versions/`. Run
 `python -m app.migrations.upgrade` from `backend/` for either an existing database
 or a fresh database. The migration adds tables/columns and preserves existing data.
 
 | Table       | Purpose                                              |
 |-------------|-------------------------------------------------------|
 | buildings   | Buildings on campus (name, code, coordinates)         |
+| building_entrances | One designated entrance node and optional surveyed geographic coordinates per building |
 | floors      | Building floor, plan URL, image dimensions and metric scale |
 | nodes       | Points in the walkable graph (intersections, doors)   |
 | connections | Weighted edges between nodes, used by Dijkstra/A*     |
@@ -34,3 +35,11 @@ latitude/longitude routing.
 `DEMO` building in one transaction when absent. If it already exists, the loader
 leaves all its rows unchanged. It never rewrites other buildings or node IDs.
 See [INDOOR_DATA.md](INDOOR_DATA.md) for preparing real data.
+
+`v003_building_entrances` adds explicit handoff points for the original sample
+buildings and upgrades the known entry in older indoor demos. Existing bindings
+are preserved. `building_entrances.building_id` is both the primary key and a
+foreign key, so each building has one designated entrance in this version.
+`node_id` identifies that entrance in the graph; nullable `latitude/longitude`
+locate the same entrance on the road map. No coordinates are inferred from the
+building centre. The synthetic DEMO has no geographic destination.

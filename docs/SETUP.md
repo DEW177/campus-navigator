@@ -80,8 +80,8 @@ a room marker, then **ไปห้องนี้** (or use the room list below 
 **กลับไปแผนที่** closes the plan and preserves the route already on screen.
 
 1. Open `http://localhost:3000/` and search `DEMO-301`.
-2. Select the room, then choose `ทางเข้าอาคารทดลอง` on floor 1.
-3. Choose stairs and press `ค้นหาเส้นทาง`: the simulated route is 36.5 metres.
+2. Select the room; its designated entrance on floor 1 is used automatically.
+3. Choose stairs and press `ทดลองเส้นทางจากทางเข้า`: the simulated route is 36.5 metres.
 4. Use the floor buttons or `ดูชั้นที่ไปถึง` in the directions to view floors 2 and 3.
 5. Choose the lift and calculate again: the simulated route is 81.5 metres.
 
@@ -97,10 +97,15 @@ An explicitly configured separate API origin also needs that backend's CORS setu
 Indoor plans do not request external map tiles. Existing outdoor routes still use
 Leaflet/OpenStreetMap. There is no live indoor positioning.
 
-Refreshing a navigation page restores the selected start, stairs/lift preference
-and viewed floor. If a route was requested before refresh, it is recalculated
-from current data. Missing start points require a new selection; route failures
-show a recovery message. If you have walked elsewhere, choose your new start:
-restoring a choice does not detect your present location.
+The main start action is now **นำทางจากตำแหน่งของฉัน**. No start-node picker or
+address/floor input is needed. Outdoor directions open in Google Maps, while
+indoor routes begin at the building's designated entrance. Device coordinates
+stay in memory and are requested only on a button press; refresh requires a new
+location action. Indoor route mode, viewed floor and requested route are restored
+by recalculating from the entrance with current data.
+
+**Phone geolocation requires trusted HTTPS.** The HTTP LAN address above supports
+browsing, but cannot read the phone's location. See [CURRENT_LOCATION.md](CURRENT_LOCATION.md)
+for the complete flow and optional local HTTPS setup on port 3443.
 
 See [INDOOR_DATA.md](INDOOR_DATA.md) for the data contract and what to survey later.

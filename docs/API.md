@@ -66,37 +66,32 @@ Direct API access during development: `http://localhost:8000/api`.
   ```
 
 ## Search to navigation flow
-- Start at `/`: search is available immediately, or choose a room from the initial list.
-- Search with `GET /rooms/?search=SC06`, then open `/navigate?room=<room.id>&q=<search text>`.
-- Restore the chosen destination with `GET /rooms/{id}`. A missing room returns `404`.
-- Use `navigation_node_id` as `end_node_id`, not the room ID. If it is null, navigation is unavailable.
-  Display `navigation_scope` and `navigation_label` so an entrance is not presented as a room door.
-- `GET /navigate/nodes` returns named starting locations as `[{"id": 1, "label": "ทางเข้า SC06", "floor": 1}]`.
-  Unnamed nodes are hidden from this picker but remain available to the routing algorithm.
-- Submit a positive integer `start_node_id` and the destination's `navigation_node_id` to `POST /navigate/`.
-- Changing the start or destination clears the previous route; loading and routing failures are shown in Thai.
+- Start at `/`, search with `GET /rooms/?search=SC06`, then open `/navigate?room=<id>&q=<query>`.
+- Room responses include `entrance`, either null or `{node_id, label, floor_id, floor, latitude, longitude}`.
+  It is the building's designated entry, validated against the indoor building/floor/coordinates.
+  Null latitude/longitude means there is no geographic road-map destination. The synthetic DEMO
+  never exposes geographic coordinates; its graph entry is still available for indoor trials.
+- The browser reads the device location only after a button press. It opens an explicit Google Maps
+  link with the current origin and the entrance's geographic destination; no street geometry is
+  calculated by our node-routing API. Invalid/denied/timed-out fixes offer a retry and preserve browsing.
+- The indoor action uses `entrance.node_id` as `start_node_id` and `navigation_node_id` as `end_node_id`.
+  These are different from room IDs. No nearest-node guessing or manual start picker is used.
+- `GET /navigate/nodes` remains available for graph inspection and future features; the main page no
+  longer requests this list. The generic `POST /navigate/` node contract remains compatible.
 
-The home page stores the search in `/?q=...`. Selecting another room returns to
-that search, and refresh/browser history restore the input. Legacy `/search`
-links redirect to `/` with the same `q` parameter. Typing replaces the current
-history entry rather than creating one entry per character.
+Navigation URLs retain `room`, `q`, `mode`, `floor` and `route=1` for an explicitly requested
+indoor route. Refresh reloads room/entrance data and recalculates it. No geometry or device
+coordinates are saved. The old `start` query parameter is not used; a link containing it will
+not automatically recalculate from a different point. A new indoor action removes it.
+Changing mode clears the route; changing the viewed floor does not recalculate.
 
-Navigation URLs preserve `room`, `q`, `start`, `mode`, `floor` and `route=1` (the
-last means a route was requested). Refresh reloads the room and available starts,
-validates the choices, then requests a fresh route. No path geometry is cached.
-Changing start or mode clears `route` and `floor` until the user calculates again.
-Viewing another floor does not recalculate. Invalid/deleted starts and invalid
-modes are shown with recovery instructions instead of silently substituting a route.
-`floor` is a database floor ID; missing/stale floor IDs fall back to a valid floor.
+The home page preserves search in `/?q=...`. Legacy `/search` links redirect home with the same query.
 
-## Route map display
-After a successful navigation request, the frontend renders the ordered path
-inside the Leaflet map, with labeled start and destination markers. The view
-fits the full route automatically; the "ดูเส้นทางทั้งหมด" button restores this
-view after panning or zooming. A single-node route uses one combined marker.
-Changing the start/destination or a failed request clears the previous overlays.
-This geographic view remains available for legacy nodes without `floor_id`.
-Indoor rooms use the floor-plan view below.
+## Outdoor map display
+The app shows the designated entrance and the latest device fix with an accuracy circle. These
+are positions, not a route; road routing opens in Google Maps and allows the user to choose a
+travel mode there. No straight line is invented between home and campus, and GPS does not
+imply an indoor floor or automatic arrival. See [CURRENT_LOCATION.md](CURRENT_LOCATION.md).
 
 ## Indoor navigation
 
@@ -106,8 +101,7 @@ Indoor rooms use the floor-plan view below.
 - `GET /floors/{id}` returns one floor or `404`.
 - Room responses also include `floor_id`, `building_name`, and `is_demo`.
 - Named start locations also include `floor_id`, `building_id`, `building_name`,
-  and `is_demo`. For indoor navigation the UI offers starts in the room's building;
-  outdoor rooms keep the legacy outdoor start list.
+  and `is_demo`. The main UI uses the designated entrance, not this list.
 - `POST /navigate/` accepts an optional `route_mode`: `shortest` (default),
   `stairs` (exclude lift edges), or `elevator` (exclude stair edges). A restricted
   route with no available connection returns `404 ROUTE_NOT_FOUND`; it does not

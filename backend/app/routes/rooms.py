@@ -4,6 +4,8 @@ from sqlalchemy.orm import Session, joinedload
 from app.database.database import get_db
 from app.models.room import Room
 from app.models.node import Node
+from app.models import Building, BuildingEntrance
+from app.services.entrance_service import entrance_summary
 
 router = APIRouter()
 
@@ -32,6 +34,7 @@ def room_summary(room):
                 node.label or "ทางเข้าอาคาร") if scope != "unavailable" else None,
             "building_name": room.building.name if room.building else None,
             "is_demo": room.building.is_demo if room.building else False,
+            "entrance": entrance_summary(room.building),
             "map_position": position}
 
 
@@ -39,7 +42,10 @@ def room_summary(room):
 def list_rooms(search: str = Query(None), building_id: int | None = Query(None, gt=0),
                db: Session = Depends(get_db)):
     """List rooms by name and/or building, including their indoor door position."""
-    query = db.query(Room).options(joinedload(Room.building), joinedload(Room.node).joinedload(Node.floor_plan))
+    query = db.query(Room).options(
+        joinedload(Room.building).joinedload(Building.entrance)
+            .joinedload(BuildingEntrance.node).joinedload(Node.floor_plan),
+        joinedload(Room.node).joinedload(Node.floor_plan))
     if search:
         query = query.filter(Room.name.ilike(f"%{search}%"))
     if building_id is not None:

@@ -38,8 +38,8 @@ export default function useNavigation() {
       if (controller.signal.aborted) return;
       const code = err.response?.data?.detail?.code;
       const messages = {
-        NODE_NOT_FOUND: "จุดเริ่มต้นหรือจุดหมายไม่มีในระบบแล้ว กรุณาเลือกใหม่",
-        ROUTE_NOT_FOUND: "ไม่พบเส้นทางจากจุดนี้ไปยังห้องที่เลือก ลองเลือกจุดเริ่มต้นหรือวิธีขึ้นลงชั้นใหม่",
+        NODE_NOT_FOUND: "ข้อมูลทางเข้าหรือห้องเปลี่ยนไป กรุณารีเฟรชหน้าแล้วลองอีกครั้ง",
+        ROUTE_NOT_FOUND: "ไม่พบเส้นทางจากทางเข้าไปยังห้องที่เลือก ลองเปลี่ยนวิธีขึ้นลงชั้นหรือเลือกห้องอื่น",
         INVALID_MAP_DATA: "ข้อมูลแผนผังหรือทางเชื่อมยังไม่สมบูรณ์ กรุณาเลือกเส้นทางอื่น",
       };
       setError(messages[code] || "คำนวณเส้นทางไม่ได้ กรุณาลองอีกครั้ง");

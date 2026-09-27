@@ -1,15 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import CampusMap from "../components/CampusMap";
-import RoutePolyline from "../components/RoutePolyline";
 import FloorMap from "../components/FloorMap";
 import FloorSelector from "../components/FloorSelector";
 import DirectionSteps from "../components/DirectionSteps";
 import BuildingPlanBrowser from "../components/BuildingPlanBrowser";
-import StartLocationPicker from "../components/StartLocationPicker";
+import OutdoorNavigation from "../components/OutdoorNavigation";
 import useNavigation from "../hooks/useNavigation";
 import api from "../services/api";
-import { getStartLocations, getFloors } from "../services/mapService";
+import { getFloors } from "../services/mapService";
 
 export default function NavigationPage() {
   const goTo = useNavigate();
@@ -19,29 +17,29 @@ export default function NavigationPage() {
   const searchUrl = searchQuery ? `/?${new URLSearchParams({ q: searchQuery })}` : "/";
   const validRoomId = /^[1-9]\d*$/.test(roomId || "") && Number.isSafeInteger(Number(roomId));
   const [room, setRoom] = useState(null);
-  const [locations, setLocations] = useState([]);
-  const startId = params.get("start") || "";
-  const validStartId = /^[1-9]\d*$/.test(startId) && Number.isSafeInteger(Number(startId));
-  const savedMode = params.get("mode") || "shortest";
-  const validMode = ["shortest", "stairs", "elevator"].includes(savedMode);
-  const routeMode = validMode ? savedMode : "shortest";
-  const routeRequested = params.get("route") === "1";
-  const [routeAttempt, setRouteAttempt] = useState(0);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState("");
   const [attempt, setAttempt] = useState(0);
+  const [routeAttempt, setRouteAttempt] = useState(0);
   const [fitRequest, setFitRequest] = useState(0);
   const [floors, setFloors] = useState([]);
+  const savedMode = params.get("mode") || "shortest";
+  const validMode = ["shortest", "stairs", "elevator"].includes(savedMode);
+  const routeMode = validMode ? savedMode : "shortest";
+  // Old manual-start links must not silently become routes from another point.
+  const routeRequested = params.get("route") === "1" && !params.has("start");
   const { path, distance, route, loading: routing, error, navigate, reset } = useNavigation();
   const indoor = room?.floor_id != null;
-  const entranceOnly = room?.navigation_scope === "entrance";
-  const destinationLabel = room?.navigation_label;
-  const selectedStart = validStartId ? locations.find((node) => node.id === Number(startId)) : null;
+  const entrance = room?.entrance;
+  const canRouteIndoors = indoor && room?.navigation_scope === "room"
+    && room?.navigation_node_id != null && entrance?.floor_id != null && entrance?.node_id != null;
   const selectedFloorId = floors.find((floor) => String(floor.id) === params.get("floor"))?.id
     ?? route?.segments?.[0]?.floor_id ?? room?.floor_id ?? null;
   const selectedFloor = floors.find((floor) => floor.id === selectedFloorId);
   const updateChoices = (changes) => setParams((previous) => {
     const next = new URLSearchParams(previous);
+    if (previous.has("start") && changes.route !== "1") next.delete("route");
+    next.delete("start");
     Object.entries(changes).forEach(([key, value]) => {
       if (value == null || value === "") next.delete(key);
       else next.set(key, String(value));
@@ -53,7 +51,6 @@ export default function NavigationPage() {
   useEffect(() => {
     const controller = new AbortController();
     setRoom(null);
-    setLocations([]);
     setFloors([]);
     setLoadError("");
     reset();
@@ -62,10 +59,8 @@ export default function NavigationPage() {
       return () => controller.abort();
     }
     setLoading(true);
-    Promise.all([
-      api.get(`/rooms/${roomId}`, { signal: controller.signal }).then((res) => res.data),
-      getStartLocations(controller.signal),
-    ]).then(async ([selectedRoom, nodes]) => {
+    const load = async () => {
+      const selectedRoom = (await api.get(`/rooms/${roomId}`, { signal: controller.signal })).data;
       if (controller.signal.aborted) return;
       if (!selectedRoom) {
         setLoadError("ไม่พบห้องที่เลือก กรุณาค้นหาห้องใหม่");
@@ -76,10 +71,8 @@ export default function NavigationPage() {
       if (controller.signal.aborted) return;
       setRoom(selectedRoom);
       setFloors(roomFloors);
-      setLocations(nodes.filter((node) => selectedRoom.floor_id != null
-        ? node.building_id === selectedRoom.building_id && node.floor_id != null
-        : node.floor_id == null));
-    }).catch((err) => {
+    };
+    load().catch((err) => {
       if (controller.signal.aborted) return;
       setLoadError(err.response?.status === 404
         ? "ไม่พบห้องที่เลือก กรุณาค้นหาห้องใหม่"
@@ -90,31 +83,30 @@ export default function NavigationPage() {
     return () => controller.abort();
   }, [roomId, validRoomId, attempt, reset]);
 
-  // A restored URL reloads current map data and recomputes the route. Only the
-  // choices live in the URL; stale geometry is never restored from storage.
+  // Restore only the entrance-to-room plan. Device coordinates are neither
+  // persisted nor restored, and refresh never triggers a geolocation prompt.
   useEffect(() => {
-    if (!loading && room?.id === Number(roomId) && room?.navigation_node_id
-        && routeRequested && selectedStart && validMode) {
-      navigate(selectedStart.id, room.navigation_node_id, routeMode);
+    if (!loading && room?.id === Number(roomId) && canRouteIndoors && routeRequested && validMode) {
+      navigate(room.entrance.node_id, room.navigation_node_id, routeMode);
     }
     return reset;
-  }, [loading, room, roomId, routeRequested, selectedStart, validMode, routeMode,
+  }, [loading, room, roomId, canRouteIndoors, routeRequested, validMode, routeMode,
       routeAttempt, navigate, reset]);
 
   const handleGo = (event) => {
     event.preventDefault();
-    if (!routing && room?.navigation_node_id && selectedStart) {
+    if (!routing && canRouteIndoors) {
       updateChoices({ route: "1", mode: routeMode, floor: null });
       setRouteAttempt((value) => value + 1);
     }
   };
 
   return (
-    <div className="page navigation-page">
+    <main className="page navigation-page">
       <h2>นำทางไปห้องเรียน</h2>
       <Link to={searchUrl}>เลือกห้องอื่น</Link>
       {!validRoomId && <p>กรุณาค้นหาและเลือกห้องที่ต้องการไปก่อน</p>}
-      {loading && <p role="status">กำลังโหลดห้องและจุดเริ่มต้น...</p>}
+      {loading && <p role="status">กำลังโหลดข้อมูลห้อง...</p>}
       {loadError && <div role="alert"><p>{loadError}</p><button onClick={() => setAttempt((n) => n + 1)}>ลองอีกครั้ง</button></div>}
       {!loading && room && <>
         <h3>ปลายทาง: {room.name}</h3>
@@ -123,18 +115,22 @@ export default function NavigationPage() {
           <strong>โหมดทดลอง — ข้อมูลตัวอย่าง</strong>
           <p>ห้อง แผนผัง จุดสังเกต และระยะทางเป็นข้อมูลจำลอง สำหรับทดลองระบบเท่านั้น</p>
         </aside>}
-        {entranceOnly && <aside className="demo-notice" aria-label="ขอบเขตการนำทาง">
+        {room.navigation_scope === "entrance" && <aside className="demo-notice" aria-label="ขอบเขตการนำทาง">
           <strong>นำทางได้ถึงทางเข้าอาคารเท่านั้น</strong>
-          <p>เส้นทางนี้สิ้นสุดที่ {destinationLabel} ยังไม่มีเส้นทางภายในอาคารไปถึงประตูห้อง {room.name} ชั้น {room.floor}</p>
+          <p>ยังไม่มีเส้นทางภายในอาคารไปถึงประตูห้อง {room.name} ชั้น {room.floor}</p>
         </aside>}
-        {!room.navigation_node_id ? <p role="status">ห้องนี้ยังไม่มีข้อมูลเส้นทาง กรุณาเลือกห้องอื่น</p> : (
-          locations.length === 0 ? <p role="status">ยังไม่มีจุดเริ่มต้นให้เลือก</p> : (
+        <OutdoorNavigation key={room.id} entrance={entrance} isDemo={room.is_demo} hasIndoorRoute={canRouteIndoors} />
+        <BuildingPlanBrowser key={`plan-${room.id}`} destination={room} onSelectRoom={(selected) => {
+          const next = new URLSearchParams({ room: String(selected.id) });
+          if (searchQuery) next.set("q", searchQuery);
+          goTo(`/navigate?${next}`);
+        }} />
+        {indoor && <section aria-labelledby="indoor-heading">
+          <h3 id="indoor-heading">จากทางเข้าไปห้องเรียน</h3>
+          {canRouteIndoors ? <>
+            <p>เริ่มเส้นทางในผังที่ {entrance.label} · ชั้น {entrance.floor} ระบบไม่ได้ระบุว่าคุณอยู่ที่จุดนี้แล้ว</p>
             <form onSubmit={handleGo}>
-              <StartLocationPicker locations={locations} value={selectedStart ? startId : ""} onChange={(value) => {
-                reset();
-                updateChoices({ start: value, mode: routeMode, route: null, floor: null });
-              }} />
-              {indoor && <div className="route-mode-picker">
+              <div className="route-mode-picker">
                 <label htmlFor="route-mode">ขึ้นลงชั้นด้วยอะไร?</label>
                 <select id="route-mode" value={routeMode} onChange={(event) => {
                   reset();
@@ -144,36 +140,21 @@ export default function NavigationPage() {
                   <option value="stairs">ใช้บันได</option>
                   <option value="elevator">ใช้ลิฟต์</option>
                 </select>
-              </div>}
-              <button type="submit" disabled={!selectedStart || routing}>
-                {routing ? "กำลังคำนวณ..." : "ค้นหาเส้นทาง"}
+              </div>
+              <button type="submit" disabled={routing}>
+                {routing ? "กำลังคำนวณ..." : room.is_demo ? "ทดลองเส้นทางจากทางเข้า" : "ดูเส้นทางจากทางเข้าไปห้อง"}
               </button>
             </form>
-          )
-        )}
-        {room.navigation_node_id && startId && !selectedStart && <p role="alert">จุดเริ่มต้นเดิมใช้ไม่ได้แล้ว กรุณาเลือกจุดเริ่มต้นใหม่</p>}
-        {room.navigation_node_id && routeRequested && !startId && <p role="alert">กรุณาเลือกจุดเริ่มต้นเพื่อคำนวณเส้นทางอีกครั้ง</p>}
-        {routeRequested && !validMode && <p role="alert">ตัวเลือกเส้นทางเดิมไม่ถูกต้อง กรุณาเลือกวิธีขึ้นลงชั้นหรือกดค้นหาเส้นทางใหม่</p>}
-        {routing && <p role="status">กำลังคำนวณเส้นทาง...</p>}
-        {error && <p role="alert">{error}</p>}
-        {distance !== null && <p role="status">
-          {distance === 0 ? (entranceOnly
-            ? "จุดเริ่มต้นที่เลือกอยู่ที่ทางเข้าอาคาร ยังไม่ใช่ประตูห้อง"
-            : "จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน")
-            : `${room.is_demo ? "ระยะทางจำลอง" : "ระยะทาง"}: ${distance.toFixed(1)} เมตร`}
-        </p>}
-        {path.length > 0 && <div className="route-summary">
-          <p><span className="route-key route-key--start" aria-hidden="true" />จุดเริ่มต้น: {locations.find((node) => node.id === Number(startId))?.label}</p>
-          <p><span className="route-key route-key--end" aria-hidden="true" />จุดหมาย: {destinationLabel}</p>
-          <p>คำนวณจากจุดเริ่มต้นที่เลือก หากเดินไปแล้วให้เปลี่ยนจุดเริ่มต้น</p>
-          <button type="button" onClick={() => setFitRequest((value) => value + 1)}>{indoor ? "ดูเส้นทางในชั้นนี้" : "ดูเส้นทางทั้งหมด"}</button>
-        </div>}
-        <BuildingPlanBrowser key={room.id} destination={room} onSelectRoom={(selected) => {
-          const next = new URLSearchParams({ room: String(selected.id) });
-          if (searchQuery) next.set("q", searchQuery);
-          goTo(`/navigate?${next}`);
-        }} />
-        {indoor ? <>
+          </> : <p role="status">ยังไม่มีข้อมูลทางเข้าที่เชื่อมไปห้องนี้ คุณยังดูผังชั้นได้</p>}
+          {routeRequested && !validMode && <p role="alert">ตัวเลือกเส้นทางเดิมไม่ถูกต้อง กรุณาเลือกวิธีขึ้นลงชั้นแล้วคำนวณใหม่</p>}
+          {routing && <p role="status">กำลังคำนวณเส้นทาง...</p>}
+          {error && <p role="alert">{error}</p>}
+          {distance !== null && <p role="status">{room.is_demo ? "ระยะทางจำลองในอาคาร" : "ระยะทางในอาคาร"}: {distance.toFixed(1)} เมตร</p>}
+          {path.length > 0 && <div className="route-summary">
+            <p>จาก: {entrance.label} → ประตูห้อง {room.name}</p>
+            <p>เส้นทางเริ่มที่ทางเข้าอาคาร และไม่ได้ติดตามตำแหน่งขณะเดิน</p>
+            <button type="button" onClick={() => setFitRequest((value) => value + 1)}>ดูเส้นทางในชั้นนี้</button>
+          </div>}
           <h3>แผนผัง{selectedFloor?.name || `ชั้น ${room.floor}`}</h3>
           <FloorSelector floors={floors} value={selectedFloorId} onChange={selectFloor}
             routeFloorIds={(route?.segments || []).map((segment) => segment.floor_id)} />
@@ -185,17 +166,9 @@ export default function NavigationPage() {
             selectFloor(floorId);
             document.querySelector(".floor-selector")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
           }} />
-        </> : <div className="navigation-map" role="region" aria-label="แผนที่เส้นทางไปห้องเรียน">
-          <CampusMap markers={[]}>
-            <RoutePolyline
-              path={path}
-              startLabel={locations.find((node) => node.id === Number(startId))?.label}
-              endLabel={destinationLabel}
-              fitRequest={fitRequest}
-            />
-          </CampusMap>
-        </div>}
+        </section>}
+        {!indoor && !entrance && <p role="status">ห้องนี้ยังไม่มีข้อมูลเส้นทาง กรุณาเลือกห้องอื่นหรือดูผังอาคารทดลอง</p>}
       </>}
-    </div>
+    </main>
   );
 }

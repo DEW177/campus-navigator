@@ -20,13 +20,14 @@ docker compose up --build
 ```
 
 Indoor navigation can be tried immediately with the explicitly marked **DEMO**
-building: search `DEMO-301`, start at `ทางเข้าอาคารทดลอง`, and choose stairs or lift.
+building: search `DEMO-301`, choose stairs or lift, and press `ทดลองเส้นทางจากทางเข้า`.
+The indoor start is the designated entrance; users do not choose a graph point.
 It includes 3 simulated floor plans, 9 rooms and step-by-step directions.
 Real campus plans and surveyed paths are still needed before using it on site.
 See [the indoor data guide](docs/INDOOR_DATA.md).
 
 The original SC06/RC01 sample routes reach building entrances only; the app labels
-this limitation explicitly. Navigation choices survive refresh, and requested
+this limitation explicitly. Indoor navigation choices survive refresh, and requested
 routes are recalculated using current data. For phone access on the same Wi-Fi,
 open `http://<computer IPv4>:3000`; see [setup](docs/SETUP.md).
 
@@ -34,3 +35,8 @@ open `http://<computer IPv4>:3000`; see [setup](docs/SETUP.md).
 - Backend: Python, FastAPI, SQLAlchemy, PostgreSQL
 - Frontend: React, Leaflet
 - Algorithm: Dijkstra's Algorithm (shortest path)
+
+The main outdoor action uses the phone's current location, then opens road directions
+in Google Maps. There is no start-address or floor form. Phone geolocation requires
+HTTPS; localhost also works for desktop development. See [current location and local
+HTTPS setup](docs/CURRENT_LOCATION.md).

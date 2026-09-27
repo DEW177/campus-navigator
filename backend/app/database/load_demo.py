@@ -4,7 +4,7 @@ import math
 from pathlib import Path
 from sqlalchemy.orm import Session
 from app.database.database import SessionLocal
-from app.models import Building, Floor, Node, Room, Connection
+from app.models import Building, Floor, Node, Room, Connection, BuildingEntrance
 
 DEMO_FILE = Path(__file__).resolve().parents[2] / "data" / "indoor_demo.json"
 
@@ -16,6 +16,8 @@ def validate_data(data):
         raise ValueError("Duplicate floor/node keys")
     if data["building"]["code"] != "DEMO" or data["building"]["is_demo"] is not True:
         raise ValueError("This importer only accepts the explicitly marked DEMO building")
+    if nodes.get(data.get("entrance_node"), {}).get("kind") != "entrance":
+        raise ValueError("Demo must identify an explicit entrance node")
     for f in floors.values():
         if not all(math.isfinite(f[k]) and f[k] > 0 for k in ("width", "height", "meters_per_unit")):
             raise ValueError("Invalid floor dimensions/scale")
@@ -68,6 +70,7 @@ def load_demo(db: Session, data=None):
         db.add(node)
         db.flush()
         nodes[item["key"]] = node
+    db.add(BuildingEntrance(building_id=building.id, node_id=nodes[data["entrance_node"]].id))
     for item in data["connections"]:
         a, b = nodes[item["source"]], nodes[item["target"]]
         weight = item.get("weight")
