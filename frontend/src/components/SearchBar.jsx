@@ -1,20 +1,17 @@
-import React, { useState } from "react";
+import React from "react";
 
-/** Search input for finding rooms/buildings by name. */
-export default function SearchBar({ onSearch, placeholder = "พิมพ์ชื่อหรือรหัสห้อง เช่น SC06-301" }) {
-  const [value, setValue] = useState("");
-
-  const handleChange = (e) => {
-    setValue(e.target.value);
-    onSearch?.(e.target.value);
-  };
-
+/** Controlled input stays in sync with saved searches and browser history. */
+export default function SearchBar({
+  id = "room-search", value = "", onSearch,
+  placeholder = "พิมพ์ชื่อหรือรหัสห้อง เช่น SC06-301",
+}) {
   return (
     <input
+      id={id}
       type="text"
       aria-label="ค้นหาห้องเรียน"
       value={value}
-      onChange={handleChange}
+      onChange={(event) => onSearch?.(event.target.value)}
       placeholder={placeholder}
       className="search-bar"
     />

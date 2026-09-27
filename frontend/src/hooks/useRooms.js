@@ -4,7 +4,7 @@ import api from "../services/api";
 /** Fetch rooms, optionally filtered by a search query. */
 export default function useRooms(search = "") {
   const [rooms, setRooms] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [attempt, setAttempt] = useState(0);
 

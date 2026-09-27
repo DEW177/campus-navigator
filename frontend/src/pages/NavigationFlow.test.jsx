@@ -29,10 +29,11 @@ async function submit() { await act(async () => Simulate.submit(box.querySelecto
 async function search(value) { await act(async () => Simulate.change(box.querySelector("input"), { target: { value } })); }
 
 test("search -> room -> named start -> numeric IDs and distance", async () => {
-  await open("/search"); await search("SC06");
+  await open("/"); await search("SC06");
   expect(api.get).toHaveBeenLastCalledWith("/rooms/", expect.objectContaining({ params: { search: "SC06" } }));
   await act(async () => button("ไปห้องนี้").click());
-  expect(window.location.search).toBe("?room=10");
+  expect(new URLSearchParams(window.location.search).get("room")).toBe("10");
+  expect(new URLSearchParams(window.location.search).get("q")).toBe("SC06");
   expect(box.textContent).toContain("ปลายทาง: SC06-301");
   expect(button("ค้นหาเส้นทาง").disabled).toBe(true);
   expect(box.textContent).toContain("ทางเข้า SC06");
@@ -47,7 +48,7 @@ test("saved room URL restores destination", async () => {
 });
 test.each(["/navigate", "/navigate?room=abc", "/navigate?room=-1"])("invalid link %s leads to search", async (url) => {
   await open(url); expect(box.textContent).toContain("กรุณาค้นหาและเลือกห้อง");
-  expect(box.querySelector('a[href="/search"]')).not.toBeNull(); expect(api.get).not.toHaveBeenCalled();
+  expect(box.querySelector('a[href="/"]')).not.toBeNull(); expect(api.get).not.toHaveBeenCalled();
 });
 test("deleted room has recovery message", async () => {
   await open("/navigate?room=999"); expect(box.querySelector('[role="alert"]').textContent).toContain("ไม่พบห้อง");
@@ -88,11 +89,58 @@ test("search network error can retry", async () => {
   await act(async () => button("ลองอีกครั้ง").click()); expect(button("ไปห้องนี้")).toBeDefined();
 });
 test("empty search result offers guidance", async () => {
-  api.get.mockResolvedValueOnce({ data: [] }); await open("/search"); expect(box.textContent).toContain("ไม่พบห้อง");
+  api.get.mockResolvedValueOnce({ data: [] }); await open("/"); expect(box.textContent).toContain("ยังไม่มีห้องในระบบ");
 });
 test("old search cannot replace latest search", async () => {
   let resolve; api.get.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
   await open("/search"); await search("SC06");
   await act(async () => resolve({ data: [{ ...room, name: "OLD ROOM" }] }));
   expect(box.textContent).toContain("SC06-301"); expect(box.textContent).not.toContain("OLD ROOM");
+});
+
+
+test("home offers room search and selection immediately", async () => {
+  await open("/");
+  expect(box.querySelector("h1").textContent).toBe("จะไปห้องไหน?");
+  expect(box.querySelector('label[for="room-search"]')).not.toBeNull();
+  expect(box.querySelector("input")).not.toBeNull();
+  expect(button("ไปห้องนี้")).toBeDefined();
+  expect(window.location.pathname).toBe("/");
+  expect(box.querySelector('a[href="/navigate"]')).toBeNull();
+});
+
+test("legacy search URL redirects home and preserves its query", async () => {
+  await open("/search?q=SC06");
+  expect(window.location.pathname).toBe("/");
+  expect(box.querySelector("input").value).toBe("SC06");
+  expect(api.get).toHaveBeenCalledWith("/rooms/", expect.objectContaining({ params: { search: "SC06" } }));
+});
+
+test("choose another room returns home with the original search", async () => {
+  await open("/"); await search("SC06");
+  await act(async () => button("ไปห้องนี้").click());
+  await act(async () => box.querySelector('a[href="/?q=SC06"]').click());
+  expect(window.location.pathname).toBe("/");
+  expect(box.querySelector("input").value).toBe("SC06");
+  expect(button("ไปห้องนี้")).toBeDefined();
+});
+
+test("unmatched query can be cleared to show all rooms", async () => {
+  api.get.mockResolvedValueOnce({ data: [] });
+  await open("/?q=missing");
+  expect(box.textContent).toContain("ไม่พบห้อง");
+  await act(async () => button("ดูห้องทั้งหมด").click());
+  expect(box.querySelector("input").value).toBe("");
+  expect(window.location.search).toBe("");
+  expect(button("ไปห้องนี้")).toBeDefined();
+});
+
+test("search text stays in sync when browser history changes", async () => {
+  await open("/?q=SC06");
+  await act(async () => {
+    window.history.replaceState({}, "", "/?q=RC01");
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  });
+  expect(box.querySelector("input").value).toBe("RC01");
+  expect(api.get).toHaveBeenLastCalledWith("/rooms/", expect.objectContaining({ params: { search: "RC01" } }));
 });

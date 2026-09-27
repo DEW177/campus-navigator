@@ -52,7 +52,8 @@ Base URL: `http://localhost:8000/api`
   ```
 
 ## Search to navigation flow
-- Search with `GET /rooms/?search=SC06`, then open `/navigate?room=<room.id>`.
+- Start at `/`: search is available immediately, or choose a room from the initial list.
+- Search with `GET /rooms/?search=SC06`, then open `/navigate?room=<room.id>&q=<search text>`.
 - Restore the chosen destination with `GET /rooms/{id}`. A missing room returns `404`.
 - Use the room's `node_id` as `end_node_id`, not its room ID. If `node_id` is null, navigation is unavailable.
 - `GET /navigate/nodes` returns named starting locations as `[{"id": 1, "label": "ทางเข้า SC06", "floor": 1}]`.
@@ -60,7 +61,10 @@ Base URL: `http://localhost:8000/api`
 - Submit a positive integer `start_node_id` and the destination's `node_id` to `POST /navigate/`.
 - Changing the start or destination clears the previous route; loading and routing failures are shown in Thai.
 
-This step connects room search and start selection to the navigation API. Drawing the route on the map and moving search to the home page are separate follow-up steps.
+The home page stores the search in `/?q=...`. Selecting another room returns to
+that search, and refresh/browser history restore the input. Legacy `/search`
+links redirect to `/` with the same `q` parameter. Typing replaces the current
+history entry rather than creating one entry per character.
 
 ## Route map display
 After a successful navigation request, the frontend renders the ordered path
