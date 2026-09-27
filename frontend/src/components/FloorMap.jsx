@@ -52,7 +52,7 @@ export default function FloorMap({ floor, route, fitRequest = 0, rooms = [], sel
                 className={room.id === selectedRoomId ? "room-tooltip--selected" : ""}>{room.name}</Tooltip>
               <Popup>
                 <strong>{room.name}</strong><p>ชั้น {room.floor}</p>
-                {room.node_id && onSelectRoom
+                {room.navigation_scope === "room" && room.navigation_node_id && onSelectRoom
                   ? <button type="button" onClick={() => onSelectRoom(room)}>ไปห้องนี้</button>
                   : <p>ห้องนี้ยังไม่มีข้อมูลเส้นทาง</p>}
               </Popup>

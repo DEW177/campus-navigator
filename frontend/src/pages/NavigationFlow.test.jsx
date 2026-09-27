@@ -7,7 +7,8 @@ jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn(
 jest.mock("../components/CampusMap", () => () => <div />);
 jest.mock("../components/RoutePolyline", () => () => null);
 jest.mock("../components/FloorMap", () => ({ floor, route }) => <div data-testid="floor-map" data-floor={floor.id} data-route={!!route} />);
-const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1 };
+const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1,
+  navigation_scope: "entrance", navigation_node_id: 3, navigation_label: "ทางเข้า SC06", is_demo: true };
 const nodes = [{ id: 1, label: "ทางเข้า SC06", floor: 1 }, { id: 2, label: "ทางแยก", floor: 1 }];
 let box, root;
 beforeAll(() => {
@@ -37,7 +38,7 @@ async function search(value) { await act(async () => Simulate.change(box.querySe
 test("search -> room -> named start -> numeric IDs and distance", async () => {
   await open("/"); await search("SC06");
   expect(api.get).toHaveBeenLastCalledWith("/rooms/", expect.objectContaining({ params: { search: "SC06" } }));
-  await act(async () => button("ไปห้องนี้").click());
+  await act(async () => button("ไปทางเข้าอาคาร").click());
   expect(new URLSearchParams(window.location.search).get("room")).toBe("10");
   expect(new URLSearchParams(window.location.search).get("q")).toBe("SC06");
   expect(box.textContent).toContain("ปลายทาง: SC06-301");
@@ -60,7 +61,7 @@ test("deleted room has recovery message", async () => {
   await open("/navigate?room=999"); expect(box.querySelector('[role="alert"]').textContent).toContain("ไม่พบห้อง");
 });
 test("room without node cannot request a route", async () => {
-  api.get.mockImplementation((url) => Promise.resolve({ data: url === "/navigate/nodes" ? nodes : { ...room, node_id: null } }));
+  api.get.mockImplementation((url) => Promise.resolve({ data: url === "/navigate/nodes" ? nodes : { ...room, node_id: null, navigation_node_id: null, navigation_scope: "unavailable" } }));
   await open("/navigate?room=10"); expect(box.textContent).toContain("ยังไม่มีข้อมูลเส้นทาง");
   expect(box.querySelector("form")).toBeNull(); expect(api.post).not.toHaveBeenCalled();
 });
@@ -87,12 +88,13 @@ test("changing start cancels pending route and ignores late result", async () =>
 test("zero distance is explicit", async () => {
   api.post.mockResolvedValueOnce({ data: { path: [{ id: 3 }], total_distance: 0 } });
   await open("/navigate?room=10"); await choose("1"); await submit();
-  expect(box.textContent).toContain("จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน");
+  expect(box.textContent).toContain("จุดเริ่มต้นที่เลือกอยู่ที่ทางเข้าอาคาร ยังไม่ใช่ประตูห้อง");
+  expect(box.textContent).not.toContain("จุดเริ่มต้นและจุดหมายเป็นจุดเดียวกัน");
 });
 test("search network error can retry", async () => {
   api.get.mockRejectedValueOnce(new Error("offline")); await open("/search");
   expect(box.querySelector('[role="alert"]').textContent).toContain("โหลดรายการห้องไม่ได้");
-  await act(async () => button("ลองอีกครั้ง").click()); expect(button("ไปห้องนี้")).toBeDefined();
+  await act(async () => button("ลองอีกครั้ง").click()); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 test("empty search result offers guidance", async () => {
   api.get.mockResolvedValueOnce({ data: [] }); await open("/"); expect(box.textContent).toContain("ยังไม่มีห้องในระบบ");
@@ -110,7 +112,7 @@ test("home offers room search and selection immediately", async () => {
   expect(box.querySelector("h1").textContent).toBe("จะไปห้องไหน?");
   expect(box.querySelector('label[for="room-search"]')).not.toBeNull();
   expect(box.querySelector("input")).not.toBeNull();
-  expect(button("ไปห้องนี้")).toBeDefined();
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
   expect(window.location.pathname).toBe("/");
   expect(box.querySelector('a[href="/navigate"]')).toBeNull();
 });
@@ -124,11 +126,11 @@ test("legacy search URL redirects home and preserves its query", async () => {
 
 test("choose another room returns home with the original search", async () => {
   await open("/"); await search("SC06");
-  await act(async () => button("ไปห้องนี้").click());
+  await act(async () => button("ไปทางเข้าอาคาร").click());
   await act(async () => box.querySelector('a[href="/?q=SC06"]').click());
   expect(window.location.pathname).toBe("/");
   expect(box.querySelector("input").value).toBe("SC06");
-  expect(button("ไปห้องนี้")).toBeDefined();
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 
 test("unmatched query can be cleared to show all rooms", async () => {
@@ -138,7 +140,7 @@ test("unmatched query can be cleared to show all rooms", async () => {
   await act(async () => button("ดูห้องทั้งหมด").click());
   expect(box.querySelector("input").value).toBe("");
   expect(window.location.search).toBe("");
-  expect(button("ไปห้องนี้")).toBeDefined();
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 
 test("search text stays in sync when browser history changes", async () => {
@@ -151,7 +153,7 @@ test("search text stays in sync when browser history changes", async () => {
   expect(api.get).toHaveBeenLastCalledWith("/rooms/", expect.objectContaining({ params: { search: "RC01" } }));
 });
 
-const indoorRoom = { ...room, name: "DEMO-301", floor_id: 33, building_id: 2, is_demo: true };
+const indoorRoom = { ...room, name: "DEMO-301", floor_id: 33, building_id: 2, is_demo: true, navigation_scope: "room", navigation_label: "DEMO-301" };
 const indoorFloors = [1, 2, 3].map((number) => ({ id: 30 + number, name: `ชั้น ${number}`, number }));
 const indoorRoute = {
   map_type: "indoor", is_demo: true, total_distance: 36.5,
@@ -218,7 +220,7 @@ test("floor loading failure offers a retry", async () => {
 const demoBuilding = { id: 2, code: "DEMO", name: "อาคารทดลอง 3 ชั้น", is_demo: true };
 const planRooms = [1, 2, 3].map((number) => ({
   ...indoorRoom, id: 100 + number, name: `DEMO-${number}01`, floor: number, floor_id: 30 + number,
-  node_id: 200 + number, building_name: demoBuilding.name, map_position: { x: 350, y: 240 },
+  node_id: 200 + number, navigation_node_id: 200 + number, navigation_label: `DEMO-${number}01`, building_name: demoBuilding.name, map_position: { x: 350, y: 240 },
 }));
 function usePlanApi() {
   api.get.mockImplementation((url, options) => {
@@ -309,4 +311,80 @@ test("closing while loading aborts requests and ignores late results", async () 
   await act(async () => resolve({ data: [demoBuilding] }));
   expect(box.querySelector("dialog")).toBeNull();
   expect(box.textContent).toContain("ปลายทาง: SC06-301");
+});
+
+async function reloadApp() {
+  await act(async () => root.unmount());
+  root = createRoot(box);
+  await act(async () => root.render(<App />));
+}
+
+test("entrance coverage is explicit in search, summary and the zero-distance result", async () => {
+  await open("/");
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  expect(button("ไปห้องนี้")).toBeUndefined();
+  expect(box.textContent).toContain("นำทางได้ถึงทางเข้าอาคารเท่านั้น");
+  await act(async () => button("ไปทางเข้าอาคาร").click());
+  expect(box.textContent).toContain("ยังไม่มีเส้นทางภายในอาคารไปถึงประตูห้อง SC06-301 ชั้น 3");
+  await choose("1"); await submit();
+  expect(box.querySelector(".route-summary").textContent).toContain("จุดหมาย: ทางเข้า SC06");
+  expect(box.querySelector(".route-summary").textContent).not.toContain("จุดหมาย: SC06-301");
+});
+
+test("raw node ID without verified coverage cannot start navigation", async () => {
+  api.get.mockImplementation((url) => Promise.resolve({ data: url === "/navigate/nodes"
+    ? nodes : { ...room, navigation_node_id: null, navigation_scope: "unavailable" } }));
+  await open("/navigate?room=10&start=1&route=1");
+  expect(box.textContent).toContain("ยังไม่มีข้อมูลเส้นทาง");
+  expect(box.querySelector("form")).toBeNull();
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+test("reload preserves start, mode, viewed floor and search while recomputing the route", async () => {
+  useIndoorApi(); await open("/navigate?room=10&q=DEMO"); await choose("20");
+  await act(async () => Simulate.change(box.querySelector("#route-mode"), { target: { value: "stairs" } }));
+  await submit();
+  await act(async () => button("ดูชั้นที่ไปถึง").click());
+  expect(api.post).toHaveBeenCalledTimes(1); // viewing a floor does not recalculate
+  await reloadApp();
+  expect(box.querySelector("#start-location").value).toBe("20");
+  expect(box.querySelector("#route-mode").value).toBe("stairs");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.floor).toBe("32");
+  expect(box.textContent).toContain("36.5 เมตร");
+  expect(new URLSearchParams(window.location.search).get("q")).toBe("DEMO");
+  expect(api.post).toHaveBeenCalledTimes(2);
+  expect(api.post).toHaveBeenLastCalledWith("/navigate/", { start_node_id: 20, end_node_id: 3, route_mode: "stairs" }, expect.anything());
+});
+
+test("reload before requesting a route restores choices without calculating", async () => {
+  await open("/navigate?room=10"); await choose("2");
+  await reloadApp();
+  expect(box.querySelector("#start-location").value).toBe("2");
+  expect(api.post).not.toHaveBeenCalled();
+});
+
+test.each(["999", "-1", "1.0", "9007199254740993"])("saved invalid or deleted start %s requires a new selection", async (start) => {
+  await open(`/navigate?room=10&start=${start}&route=1`);
+  expect(box.textContent).toContain("จุดเริ่มต้นเดิมใช้ไม่ได้แล้ว");
+  expect(box.querySelector("#start-location").value).toBe("");
+  expect(api.post).not.toHaveBeenCalled();
+  await choose("1"); await submit();
+  expect(box.textContent).toContain("85.0 เมตร");
+});
+
+test("invalid saved mode requires confirmation instead of silently changing the route", async () => {
+  useIndoorApi(); await open("/navigate?room=10&start=20&mode=unknown&route=1");
+  expect(box.textContent).toContain("ตัวเลือกเส้นทางเดิมไม่ถูกต้อง");
+  expect(api.post).not.toHaveBeenCalled();
+  await submit();
+  expect(api.post).toHaveBeenLastCalledWith("/navigate/", expect.objectContaining({ route_mode: "shortest" }), expect.anything());
+});
+
+test("reload reports a newly unavailable route without resurrecting the previous line", async () => {
+  useIndoorApi(); await open("/navigate?room=10"); await choose("20"); await submit();
+  api.post.mockRejectedValue({ response: { data: { detail: { code: "ROUTE_NOT_FOUND" } } } });
+  await reloadApp();
+  expect(box.textContent).toContain("ไม่พบเส้นทางจากจุดนี้");
+  expect(box.textContent).not.toContain("36.5 เมตร");
+  expect(box.querySelector('[data-testid="floor-map"]').dataset.route).toBe("false");
 });

@@ -9,8 +9,13 @@ npm install
 npm start
 ```
 
-Runs at `http://localhost:3000`. Make sure the backend is running at the URL
-set in `.env.local` (`REACT_APP_API_URL`).
+Runs at `http://localhost:3000`. Start the backend on port 8000. The default API
+base is `/api`; the dev server proxies to `http://127.0.0.1:8000`. Remove any old
+localhost override from `.env.local`, or set `REACT_APP_API_URL=/api`.
+
+Docker serves the build with Nginx and proxies API requests and backend images
+through the same origin. To use a phone on the same Wi-Fi, open
+`http://<computer IPv4>:3000`. See [setup](../docs/SETUP.md) for upgrades and LAN access.
 
 ## Structure
 - `src/components/` - CampusMap (Leaflet), ChatBox, SearchBar, RoomCard, RoutePolyline

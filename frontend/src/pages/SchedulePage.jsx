@@ -5,7 +5,7 @@ export default function SchedulePage() {
   const [courses, setCourses] = useState([]);
 
   useEffect(() => {
-    api.get("/courses").then((res) => setCourses(res.data)).catch(console.error);
+    api.get("/courses/").then((res) => setCourses(res.data)).catch(console.error);
   }, []);
 
   return (

@@ -21,7 +21,7 @@ test("room markers use floor coordinates, reject wrong floors and select the act
   const box = document.createElement("div"); document.body.appendChild(box);
   const root = createRoot(box);
   const select = jest.fn();
-  const room = { id: 9, name: "DEMO-301", floor: 3, floor_id: 30, node_id: 100, map_position: { x: 350, y: 240 } };
+  const room = { id: 9, name: "DEMO-301", floor: 3, floor_id: 30, node_id: 100, navigation_scope: "room", navigation_node_id: 100, map_position: { x: 350, y: 240 } };
   try {
     await act(async () => root.render(<FloorMap floor={{ id: 30, width: 1000, height: 600 }}
       rooms={[room, { ...room, id: 10, floor_id: 20 }, { ...room, id: 11, map_position: null },

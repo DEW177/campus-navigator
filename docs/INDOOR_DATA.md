@@ -52,6 +52,12 @@ from different images cannot be compared as a single map. A stair/lift connectio
 must explicitly link its landing nodes. Room floor, room building and door node
 must agree. Label starts and transition nodes so people can recognize them.
 
+Use `kind="door"` for a room's actual door node; its floor ID, floor number,
+building and in-bounds coordinates must match the room before the API exposes
+`navigation_scope="room"`. A room bound to an outdoor `kind="entrance"` node
+instead gets `navigation_scope="entrance"`, and the UI offers navigation only
+to that entrance. Other legacy mappings remain unavailable until verified.
+
 Real records use a distinct building code with `is_demo=false`. Store plans and
 photos at a URL the browser can access, and use the same floor/node/connection
 schema. Survey and test routes on site before enabling the building for users.

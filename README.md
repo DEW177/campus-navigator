@@ -16,7 +16,7 @@ the campus's walkways.
 ## Quick start
 See `docs/SETUP.md`, or run everything with:
 ```bash
-docker-compose up --build
+docker compose up --build
 ```
 
 Indoor navigation can be tried immediately with the explicitly marked **DEMO**
@@ -24,6 +24,11 @@ building: search `DEMO-301`, start at `ทางเข้าอาคารท�
 It includes 3 simulated floor plans, 9 rooms and step-by-step directions.
 Real campus plans and surveyed paths are still needed before using it on site.
 See [the indoor data guide](docs/INDOOR_DATA.md).
+
+The original SC06/RC01 sample routes reach building entrances only; the app labels
+this limitation explicitly. Navigation choices survive refresh, and requested
+routes are recalculated using current data. For phone access on the same Wi-Fi,
+open `http://<computer IPv4>:3000`; see [setup](docs/SETUP.md).
 
 ## Tech stack
 - Backend: Python, FastAPI, SQLAlchemy, PostgreSQL
