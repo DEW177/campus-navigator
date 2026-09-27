@@ -1,5 +1,17 @@
+# Environment & Secret files
+.env
+.env.*
+!.env.example
+
+# Node / Frontend
 node_modules/
+dist/
 build/
-.env.local
-.DS_Store
-npm-debug.log*
+
+# Python / Backend
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.venv/
+env/
