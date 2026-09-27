@@ -2,6 +2,7 @@ import React from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import SearchBar from "../components/SearchBar";
 import RoomCard from "../components/RoomCard";
+import BuildingPlanBrowser from "../components/BuildingPlanBrowser";
 import useRooms from "../hooks/useRooms";
 
 export default function HomePage() {
@@ -31,6 +32,7 @@ export default function HomePage() {
         <label htmlFor="room-search">ค้นหาห้องเรียน</label>
         <SearchBar id="room-search" value={query} onSearch={search} />
       </div>
+      <BuildingPlanBrowser onSelectRoom={selectRoom} returnLabel="กลับไปค้นหาห้อง" />
       <section aria-labelledby="room-results-heading" aria-busy={loading}>
         <h2 id="room-results-heading">{query.trim() ? "ผลการค้นหา" : "เลือกห้องจากรายการ"}</h2>
         {loading && <p role="status">กำลังค้นหาห้อง...</p>}

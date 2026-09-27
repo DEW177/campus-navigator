@@ -47,6 +47,11 @@ legacy outdoor sample bootstrap; always run migrations after using them.
 
 ## Try indoor navigation without real campus data
 
+To browse without knowing a demo room code, press **ดูผังอาคารทดลอง** on the home
+page or just above the map on the outdoor navigation page. Select a floor and tap
+a room marker, then **ไปห้องนี้** (or use the room list below the plan).
+**กลับไปแผนที่** closes the plan and preserves the route already on screen.
+
 1. Open `http://localhost:3000/` and search `DEMO-301`.
 2. Select the room, then choose `ทางเข้าอาคารทดลอง` on floor 1.
 3. Choose stairs and press `ค้นหาเส้นทาง`: the simulated route is 36.5 metres.
