@@ -20,3 +20,11 @@ export function destinationUrl(entrance) {
     api: "1", query: `${entrance.latitude},${entrance.longitude}`,
   })}`;
 }
+
+/** Google Maps obtains its own origin after the user explicitly opens this link. */
+export function mapsLocationUrl(entrance) {
+  if (!hasCoordinates(entrance)) return null;
+  return `https://www.google.com/maps/dir/?${new URLSearchParams({
+    api: "1", destination: `${entrance.latitude},${entrance.longitude}`, dir_action: "navigate",
+  })}`;
+}

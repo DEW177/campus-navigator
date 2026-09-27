@@ -2,10 +2,10 @@ import React from "react";
 import CampusMap from "./CampusMap";
 import LocationMarkers from "./LocationMarkers";
 import useCurrentLocation from "../hooks/useCurrentLocation";
-import { hasCoordinates, directionsUrl, destinationUrl } from "../utils/location";
+import { hasCoordinates, directionsUrl, destinationUrl, mapsLocationUrl } from "../utils/location";
 
 export default function OutdoorNavigation({ entrance, isDemo, hasIndoorRoute }) {
-  const { position, loading, error, locate, cancel } = useCurrentLocation();
+  const { position, loading, retrying, error, errorCode, locate, cancel } = useCurrentLocation();
   const mapped = hasCoordinates(entrance);
   const url = directionsUrl(position, entrance);
   return <section className="outdoor-navigation" aria-labelledby="outdoor-heading">
@@ -17,10 +17,17 @@ export default function OutdoorNavigation({ entrance, isDemo, hasIndoorRoute }) 
           : position ? "อัปเดตตำแหน่งของฉัน" : "นำทางจากตำแหน่งของฉัน"}
       </button>
       {loading && <>
-        <p role="status">กำลังขอตำแหน่ง โปรดอนุญาตเมื่อเบราว์เซอร์ถาม</p>
+        <p role="status">{retrying ? "ยังหาตำแหน่งไม่ได้ กำลังลองอีกวิธี..."
+          : "กำลังขอตำแหน่ง โปรดอนุญาตเมื่อเบราว์เซอร์ถาม"}</p>
         <button type="button" onClick={cancel}>ยกเลิกการหาตำแหน่ง</button>
       </>}
       {error && <p role="alert">{error}</p>}
+      {[2, 3].includes(errorCode) && <div className="location-result">
+        <a className="primary-action" href={mapsLocationUrl(entrance)} target="_blank" rel="noopener noreferrer">
+          ให้ Google Maps หาตำแหน่งและนำทาง
+        </a>
+        <p>เปิด Google Maps ให้หาจุดเริ่มต้นเอง โดยใช้{isDemo ? "พิกัดตัวอย่างของ" : ""}ทางเข้าอาคารนี้เป็นปลายทาง</p>
+      </div>}
       {position && <div className="location-result">
         <p role="status">พบตำแหน่งของคุณแล้ว · ความแม่นยำประมาณ {Math.round(position.accuracy)} เมตร</p>
         {position.accuracy > 100 && <p>ตำแหน่งยังคลาดเคลื่อนมาก ตรวจจุดเริ่มต้นใน Google Maps หรือกดอัปเดตตำแหน่งอีกครั้ง</p>}
