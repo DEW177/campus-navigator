@@ -1,6 +1,6 @@
 """Run from backend: python -m app.migrations.upgrade (safe to repeat)."""
 from app.database.database import engine
-from app.migrations.versions import v001_indoor, v002_legacy_samples, v003_building_entrances
+from app.migrations.versions import v001_indoor, v002_legacy_samples, v003_building_entrances, v004_outdoor_usage
 
 
 def upgrade_database(target_engine=engine):
@@ -8,6 +8,7 @@ def upgrade_database(target_engine=engine):
         v001_indoor.upgrade(connection)
         v002_legacy_samples.upgrade(connection)
         v003_building_entrances.upgrade(connection)
+        v004_outdoor_usage.upgrade(connection)
 
 
 if __name__ == "__main__":

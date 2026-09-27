@@ -36,7 +36,11 @@ open `http://<computer IPv4>:3000`; see [setup](docs/SETUP.md).
 - Frontend: React, Leaflet
 - Algorithm: Dijkstra's Algorithm (shortest path)
 
-The main outdoor action uses the phone's current location, then opens road directions
-in Google Maps. There is no start-address or floor form. Phone geolocation requires
-HTTPS; localhost also works for desktop development. See [current location and local
-HTTPS setup](docs/CURRENT_LOCATION.md).
+Outdoor starts can use device location, submitted address search, or a map pin.
+With an optional server-side Geoapify key, the app draws walking/driving routes to
+the designated entrance with distance and estimated time. Google Maps remains an
+optional handoff. Without a key, manual pins and the handoff still work.
+See [outdoor setup and quota controls](docs/OUTDOOR_NAVIGATION.md).
+This is route planning, not live tracking or turn-by-turn driving navigation.
+Phone geolocation requires HTTPS; localhost works for desktop development.
+See [current location and local HTTPS setup](docs/CURRENT_LOCATION.md).

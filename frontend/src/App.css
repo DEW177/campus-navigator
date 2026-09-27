@@ -51,6 +51,24 @@
 .navigation-page form > button { background: #1d4ed8; color: white; border: 0; border-radius: 6px; }
 .navigation-page form > button:disabled { background: #64748b; }
 .outdoor-navigation { margin: 24px 0; }
+.start-methods { display: flex; gap: 8px; flex-wrap: wrap; }
+.start-methods button { border: 1px solid #64748b; border-radius: 8px; background: white; }
+.start-methods button[aria-pressed="true"] { border: 2px solid #1d4ed8; background: #eff6ff; color: #1e40af; }
+.outdoor-search { margin: 16px 0; }
+.outdoor-search label { display: block; font-weight: bold; margin-bottom: 8px; }
+.search-row { display: flex; gap: 8px; }
+.search-row input { flex: 1; min-width: 0; }
+.search-row button { border: 0; border-radius: 6px; color: white; background: #1d4ed8; }
+.search-row button:disabled { background: #64748b; }
+.place-results { list-style: none; padding: 0; }
+.place-results button { width: 100%; text-align: left; border: 1px solid #cbd5e1; border-radius: 6px; background: white; margin: 4px 0; overflow-wrap: anywhere; }
+.place-results button:hover { background: #eff6ff; }
+.service-notice { padding: 12px; background: #f1f5f9; border-left: 4px solid #64748b; }
+.map-pick-control { position: absolute; bottom: 32px; left: 12px; z-index: 1000; }
+.map-pick-control button { background: white; border: 2px solid #1d4ed8; border-radius: 8px; color: #1e40af; }
+.picking-start .leaflet-container { cursor: crosshair; }
+.outdoor-navigation button:focus-visible, .outdoor-navigation a:focus-visible { outline: 3px solid #f59e0b; outline-offset: 2px; }
+.outdoor-route-summary { margin-top: 16px; padding: 8px 12px; background: white; border-radius: 8px; }
 .outdoor-navigation .primary-action { display: inline-block; box-sizing: border-box; min-height: 44px; padding: 12px 16px; border: 0; border-radius: 8px; background: #1d4ed8; color: white; font: inherit; text-align: center; text-decoration: none; }
 .outdoor-navigation .primary-action:disabled { background: #64748b; }
 .location-result { margin: 16px 0; padding: 12px; border: 1px solid #93c5fd; border-radius: 8px; background: #eff6ff; }

@@ -3,6 +3,25 @@
 Browser base URL: `/api` on the frontend origin (proxied to the backend).
 Direct API access during development: `http://localhost:8000/api`.
 
+## Outdoor search and routing (optional Geoapify key)
+
+- `GET /outdoor/status` → `{ "configured": true }` (key presence, not a provider health check).
+- `POST /outdoor/search` → body `{ "query": "หอพัก ขอนแก่น", "building_id": 1 }`;
+  response `results: [{ label, latitude, longitude, attribution }]`. Empty results are valid.
+  Search is submitted explicitly, limited to Thailand, and biased toward the building entrance.
+- `POST /outdoor/route` → body `{ "origin": { "latitude": 16.45, "longitude": 102.8 }, "building_id": 1, "mode": "walk" }`;
+  mode is `walk` or `drive`. Destination comes from the validated entrance in the database.
+  Response: `geometry` (GeoJSON MultiLineString, **longitude then latitude**), `distance_m`,
+  `duration_s`, `mode`, `entrance`, `is_demo`, `start_gap_m`, `end_gap_m`.
+  Gaps indicate how far provider geometry endpoints lie from the requested positions.
+- Errors use `detail: { code, message }`: 503 `NOT_CONFIGURED`/`PROVIDER_AUTH`,
+  429 `DAILY_LIMIT`/`RATE_LIMIT`/`PROVIDER_LIMIT`, 504 `PROVIDER_TIMEOUT`,
+  404 `BUILDING_NOT_FOUND`/`ROUTE_NOT_FOUND`, 422 `ENTRANCE_UNMAPPED` or validation errors,
+  502 `INVALID_RESPONSE`/`PROVIDER_UNAVAILABLE`. No provider body, URL, or key is returned.
+
+Requests containing user search/location data use POST to avoid query-string access logs.
+Successful responses have `Cache-Control: no-store`. See [setup and limits](OUTDOOR_NAVIGATION.md).
+
 ## Buildings
 - `GET /buildings/` - list all buildings
 - `GET /buildings/{id}` - get a single building
