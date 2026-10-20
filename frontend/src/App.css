@@ -21,9 +21,6 @@
 .room-list { display: grid; gap: 16px; margin-top: 20px; }
 .room-card { padding: 16px; border: 1px solid #cbd5e1; border-radius: 8px; }
 .room-card h4 { margin: 0; }
-.start-location-picker { margin: 20px 0 12px; }
-.start-location-picker label { display: block; font-weight: bold; }
-.start-location-picker select { width: 100%; max-width: 100%; }
 .navigation-page form { margin-bottom: 20px; }
 .page [role="alert"] { color: #991b1b; }
 

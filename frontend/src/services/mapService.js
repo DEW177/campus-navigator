@@ -6,9 +6,7 @@ export function getBuildings(signal) {
 }
 
 /** Request the shortest path between two nodes from the backend. */
-export function getStartLocations(signal) {
-  return api.get("/navigate/nodes", { signal }).then((res) => res.data);
-}
+
 
 export function getRoute(startNodeId, endNodeId, signal, routeMode = "shortest") {
   return api
