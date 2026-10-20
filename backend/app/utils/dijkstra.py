@@ -36,17 +36,40 @@ def usable_connection(conn, route_mode="shortest"):
     )
 
 
-def build_graph(db: Session, route_mode="shortest"):
-    """Build an adjacency list {node_id: [(neighbor_id, weight), ...]} from the DB."""
-    graph = defaultdict(list)
+def build_graph(db: Session, route_mode="shortest", start_id=None):
+    """Validate active edges reachable from the start, respecting direction/mode.
+
+    A broken edge in a disconnected building must not disable a valid route.
+    Without a start, validate the entire graph (useful for map inspection).
+    Reachability is determined before reading weights so invalid reachable edges
+    still fail closed rather than silently disappearing from the route.
+    """
+    topology = defaultdict(list)
     for conn in db.query(Connection).all():
         if not usable_connection(conn, route_mode):
             continue
-        if not math.isfinite(conn.weight) or conn.weight < 0:
-            raise GraphDataError("Route weights must be finite and non-negative")
-        graph[conn.from_node_id].append((conn.to_node_id, conn.weight))
+        topology[conn.from_node_id].append((conn.to_node_id, conn.weight))
         if conn.bidirectional:
-            graph[conn.to_node_id].append((conn.from_node_id, conn.weight))
+            topology[conn.to_node_id].append((conn.from_node_id, conn.weight))
+
+    if start_id is None:
+        reachable = set(topology)
+    else:
+        reachable = {start_id}
+        pending = [start_id]
+        while pending:
+            current = pending.pop()
+            for neighbor, _ in topology.get(current, []):
+                if neighbor not in reachable:
+                    reachable.add(neighbor)
+                    pending.append(neighbor)
+
+    graph = defaultdict(list)
+    for node_id in reachable:
+        for neighbor, weight in topology.get(node_id, []):
+            if not math.isfinite(weight) or weight < 0:
+                raise GraphDataError("Route weights must be finite and non-negative")
+            graph[node_id].append((neighbor, weight))
     return graph
 
 
@@ -66,7 +89,7 @@ def find_shortest_path(db: Session, start_id: int, end_id: int, route_mode="shor
     if start_id == end_id:
         return [endpoints_by_id[start_id]], 0.0
 
-    graph = build_graph(db, route_mode)
+    graph = build_graph(db, route_mode, start_id)
     distances = {start_id: 0}
     previous = {}
     visited = set()

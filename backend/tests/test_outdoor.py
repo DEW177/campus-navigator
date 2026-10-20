@@ -13,7 +13,7 @@ from app.models import Node, BuildingEntrance, OutdoorUsage
 from app.services.geoapify_service import provider, reserve_request
 
 SEARCH = {"query": "หอพัก ขอนแก่น", "building_id": 1}
-ROUTE = {"origin": {"latitude": 16.01, "longitude": 102.01}, "building_id": 1, "mode": "walk"}
+ROUTE = {"origin": {"latitude": 16.01, "longitude": 102.01}, "building_id": 1, "mode": "drive"}
 SEARCH_RESULT = {"results": [
     {"lat": 16.01, "lon": 102.01, "formatted": "หอพัก ขอนแก่น", "secret": "ignore",
      "datasource": {"attribution": "© OpenStreetMap contributors"}},
@@ -77,7 +77,7 @@ def test_empty_search_is_success_not_fake_result(client, monkeypatch):
     assert client.post("/api/outdoor/search", json=SEARCH).json() == {"results": []}
 
 
-@pytest.mark.parametrize("mode", ["walk", "drive"])
+@pytest.mark.parametrize("mode", ["drive"])
 def test_route_uses_designated_entrance_and_lonlat_geometry(client, monkeypatch, mode):
     calls = provider_reply(monkeypatch, ROUTE_RESULT)
     response = client.post("/api/outdoor/route", json={**ROUTE, "mode": mode})
@@ -135,6 +135,7 @@ def test_no_route_and_malformed_geometry(client, monkeypatch, data, status, code
 @pytest.mark.parametrize("endpoint,payload", [("search", {**SEARCH, "query": " "}),
     ("search", {**SEARCH, "query": "a" * 201}),
     ("route", {**ROUTE, "mode": "flight"}),
+    ("route", {**ROUTE, "mode": "walk"}),
     ("route", {**ROUTE, "origin": {"latitude": 91, "longitude": 102}}),
     ("route", {**ROUTE, "destination": {"latitude": 1, "longitude": 2}})])
 def test_invalid_input_is_rejected_before_provider(client, monkeypatch, endpoint, payload):
@@ -196,3 +197,12 @@ def test_utc_rollover_starts_new_counter(db, monkeypatch):
     monkeypatch.setattr("app.services.geoapify_service.time.time", lambda: 1_800_086_400)
     reserve_request(db)
     assert db.query(OutdoorUsage).count() == 2
+
+
+def test_omitted_mode_defaults_to_driving(client, monkeypatch):
+    calls = provider_reply(monkeypatch, ROUTE_RESULT)
+    payload = {key: value for key, value in ROUTE.items() if key != "mode"}
+    response = client.post("/api/outdoor/route", json=payload)
+    assert response.status_code == 200
+    assert response.json()["mode"] == "drive"
+    assert calls[0][1]["params"]["mode"] == "drive"

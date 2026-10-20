@@ -3,7 +3,7 @@ from app.database.database import Base
 
 
 class Connection(Base):
-    """An edge between two Nodes, used by Dijkstra/A* for pathfinding."""
+    """An edge between two Nodes, used by Dijkstra for pathfinding."""
     __tablename__ = "connections"
 
     id = Column(Integer, primary_key=True, index=True)

@@ -3,9 +3,9 @@
 Web-Based Classroom Navigation System for the College of Computing,
 Department of Computer Science, Khon Kaen University.
 
-A web app that helps students and visitors find the shortest walking route
-to a classroom on campus, using Dijkstra's Algorithm on a weighted graph of
-the campus's walkways.
+A web app that helps students and visitors find classrooms: plan a driving route
+to the building entrance with Geoapify, then follow an indoor entrance-to-door
+route calculated by Dijkstra on a surveyed graph. Indoor data is currently simulated.
 
 ## Project layout
 - `backend/` - FastAPI + PostgreSQL API (Partner 1)
@@ -37,10 +37,32 @@ open `http://<computer IPv4>:3000`; see [setup](docs/SETUP.md).
 - Algorithm: Dijkstra's Algorithm (shortest path)
 
 Outdoor starts can use device location, submitted address search, or a map pin.
-With an optional server-side Geoapify key, the app draws walking/driving routes to
+With an optional server-side Geoapify key, the app draws driving routes to
 the designated entrance with distance and estimated time. Google Maps remains an
 optional handoff. Without a key, manual pins and the handoff still work.
 See [outdoor setup and quota controls](docs/OUTDOOR_NAVIGATION.md).
 This is route planning, not live tracking or turn-by-turn driving navigation.
 Phone geolocation requires HTTPS; localhost works for desktop development.
 See [current location and local HTTPS setup](docs/CURRENT_LOCATION.md).
+
+## Current scope and verification
+
+The home page groups rooms by building and floor. Submit a room code or building
+name with Search/Enter to filter the loaded data; typing does not send API requests.
+The synthetic DEMO building is shown separately. Chat and course schedules are
+paused: their code/data is retained, but their API routers are not registered and
+`/schedule` redirects to the home page. Outdoor walking mode is no longer accepted;
+indoor walking routes, stairs and lift choices remain available.
+
+```bash
+python -m pytest -q backend/tests
+cd frontend
+npm ci
+npm test -- --watchAll=false --runInBand
+npm run build
+```
+
+Before on-site use, survey one real building, including its entrance, room doors,
+corridors, stairs/lifts, and a verified vehicle drop-off or parking point. The current
+driving destination is the designated entrance; parking and the outdoor walk from
+a parking point to that entrance are not modeled. Do not publish guessed coordinates.

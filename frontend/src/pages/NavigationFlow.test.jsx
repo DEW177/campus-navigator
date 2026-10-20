@@ -8,6 +8,7 @@ jest.mock("../components/CampusMap", () => () => <div />);
 jest.mock("../components/LocationMarkers", () => () => null);
 jest.mock("../components/MapStartPicker", () => () => null);
 jest.mock("../components/FloorMap", () => ({ floor, route }) => <div data-testid="floor-map" data-floor={floor.id} data-route={!!route} />);
+const campusBuilding = { id: 1, code: "SC06", name: "อาคารวิทยาลัยการคอมพิวเตอร์", is_demo: true };
 const room = { id: 10, name: "SC06-301", floor: 3, node_id: 3, building_id: 1,
   navigation_scope: "entrance", navigation_node_id: 3, navigation_label: "ทางเข้า SC06", is_demo: true,
   entrance: { node_id: 3, label: "ทางเข้า SC06", floor_id: null, floor: 1, latitude: 16.4735, longitude: 102.8236 } };
@@ -35,6 +36,7 @@ beforeEach(() => {
   geolocation = { getCurrentPosition: jest.fn((success) => success(deviceFix)) };
   Object.defineProperty(navigator, "geolocation", { value: geolocation, configurable: true });
   api.get.mockImplementation((url) => {
+    if (url === "/buildings/") return Promise.resolve({ data: [campusBuilding] });
     if (url === "/rooms/") return Promise.resolve({ data: [room] });
     if (url === "/rooms/10") return Promise.resolve({ data: room });
     return Promise.reject({ response: { status: 404 } });
@@ -55,7 +57,7 @@ function useIndoorApi(selected = indoorRoom) {
 }
 
 test("search -> room -> device location without a start picker or node request", async () => {
-  await open("/"); await search("SC06");
+  await open("/"); await search("SC06"); await submit();
   await click("ไปทางเข้าอาคาร");
   expect(new URLSearchParams(window.location.search).get("room")).toBe("10");
   expect(new URLSearchParams(window.location.search).get("q")).toBe("SC06");
@@ -67,7 +69,7 @@ test("search -> room -> device location without a start picker or node request",
   const link = new URL(box.querySelector('a[href*="/maps/dir/"]').href);
   expect(link.searchParams.get("origin")).toBe("16.2,102.6");
   expect(link.searchParams.get("destination")).toBe("16.4735,102.8236");
-  expect(link.searchParams.get("travelmode")).toBe("walking");
+  expect(link.searchParams.get("travelmode")).toBe("driving");
   expect(api.post).not.toHaveBeenCalled(); // arbitrary GPS coordinates are not graph IDs
   expect(window.location.search).not.toMatch(/16\.2|102\.6/);
   expect(localStorage.length + sessionStorage.length).toBe(0);
@@ -92,8 +94,12 @@ test("room without a mapped entrance does not invent one", async () => {
   expect(api.post).not.toHaveBeenCalled();
 });
 test("mapped building is still reachable when the classroom door is not surveyed", async () => {
-  api.get.mockResolvedValue({ data: [{ ...room, navigation_node_id: null, navigation_scope: "unavailable" }] });
-  await open("/"); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  const defaultGet = api.get.getMockImplementation();
+  api.get.mockImplementation((url, options) => url === "/rooms/"
+    ? Promise.resolve({ data: [{ ...room, navigation_node_id: null, navigation_scope: "unavailable" }] })
+    : defaultGet(url, options));
+  await open("/"); await click("ดูห้อง ↓");
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 test("entrance-only coverage stays explicit when using current location", async () => {
   await open("/navigate?room=10");
@@ -255,7 +261,10 @@ test("floor loading failure supports retry", async () => {
 
 test("home offers search immediately", async () => {
   await open("/"); expect(box.querySelector("h1").textContent).toBe("จะไปห้องไหน?");
-  expect(box.querySelector('label[for="room-search"]')).not.toBeNull(); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  expect(box.querySelector('label[for="room-search"]')).not.toBeNull();
+  expect(button("ค้นหา")).toBeDefined();
+  expect(button("ไปทางเข้าอาคาร")).toBeUndefined();
+  await click("ดูห้อง ↓"); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 test("legacy search link preserves the query", async () => {
   await open("/search?q=SC06"); expect(window.location.pathname).toBe("/"); expect(box.querySelector("input").value).toBe("SC06");
@@ -267,16 +276,26 @@ test("choosing another room returns to the search", async () => {
 });
 test("search network error supports retry", async () => {
   api.get.mockRejectedValueOnce(new Error("offline")); await open("/");
-  expect(box.textContent).toContain("โหลดรายการห้องไม่ได้"); await click("ลองอีกครั้ง"); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  expect(box.textContent).toContain("โหลดข้อมูลอาคารและห้องไม่ได้");
+  await click("ลองอีกครั้ง"); await click("ดูห้อง ↓");
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
 test("empty search offers guidance and can be cleared", async () => {
-  api.get.mockResolvedValueOnce({ data: [] }); await open("/?q=missing"); expect(box.textContent).toContain("ไม่พบห้อง");
-  await click("ดูห้องทั้งหมด"); expect(box.querySelector("input").value).toBe(""); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  await open("/?q=missing"); expect(box.textContent).toContain("ไม่พบห้องหรืออาคาร");
+  await click("ล้างการค้นหา");
+  expect(box.querySelector("input").value).toBe("");
+  await click("ดูห้อง ↓"); expect(button("ไปทางเข้าอาคาร")).toBeDefined();
 });
-test("old search cannot replace the latest result", async () => {
-  let resolve; api.get.mockImplementationOnce(() => new Promise((done) => { resolve = done; }));
-  await open("/"); await search("SC06"); await act(async () => resolve({ data: [{ ...room, name: "OLD ROOM" }] }));
-  expect(box.textContent).not.toContain("OLD ROOM"); expect(box.textContent).toContain("SC06-301");
+test("search submits locally without issuing requests for each keystroke", async () => {
+  await open("/");
+  const requestCount = api.get.mock.calls.length;
+  await search("missing");
+  expect(window.location.search).toBe("");
+  await submit();
+  expect(box.textContent).toContain("ไม่พบห้องหรืออาคาร");
+  await search("SC06"); await submit();
+  expect(box.textContent).toContain("SC06-301");
+  expect(api.get).toHaveBeenCalledTimes(requestCount);
 });
 test("search follows browser history", async () => {
   await open("/?q=SC06"); await act(async () => {
@@ -291,9 +310,9 @@ const planRooms = [1, 2, 3].map((number) => ({ ...indoorRoom, id: 100 + number,
   building_name: demoBuilding.name, map_position: { x: 350, y: 240 } }));
 function usePlanApi() {
   api.get.mockImplementation((url, options) => {
-    if (url === "/buildings/") return Promise.resolve({ data: [demoBuilding] });
+    if (url === "/buildings/") return Promise.resolve({ data: [campusBuilding, demoBuilding] });
     if (url === "/floors/") return Promise.resolve({ data: indoorFloors });
-    if (url === "/rooms/") return Promise.resolve({ data: options?.params?.building_id ? planRooms : [room] });
+    if (url === "/rooms/") return Promise.resolve({ data: options?.params?.building_id ? planRooms : [room, ...planRooms] });
     if (url === "/rooms/10") return Promise.resolve({ data: room });
     if (url.startsWith("/rooms/")) return Promise.resolve({ data: planRooms.find((item) => String(item.id) === url.split("/").pop()) });
     return Promise.reject(new Error("Unknown URL"));
@@ -321,9 +340,9 @@ test("indoor plan opens on the destination floor", async () => {
   expect(api.get.mock.calls.some(([url]) => url === "/buildings/")).toBe(false);
 });
 test("home plan browser preserves search on close", async () => {
-  usePlanApi(); await open("/?q=SC06"); await click("ดูผังอาคารทดลอง");
+  usePlanApi(); await open("/?q=DEMO"); await click("ดูผังอาคารทดลอง");
   expect(box.querySelector("dialog").textContent).toContain("DEMO-101"); await click("กลับไปค้นหาห้อง");
-  expect(box.querySelector("input").value).toBe("SC06");
+  expect(box.querySelector("input").value).toBe("DEMO");
 });
 test("plan browser supports retry", async () => {
   usePlanApi(); await open("/navigate?room=10"); api.get.mockRejectedValueOnce(new Error("offline"));
@@ -408,4 +427,43 @@ test("late first-attempt callbacks cannot replace the second attempt", async () 
   expect(box.querySelector('a[href*="/maps/dir/"]')).toBeNull();
   await act(async () => newSuccess(deviceFix));
   expect(new URL(box.querySelector('a[href*="/maps/dir/"]').href).searchParams.get("origin")).toBe("16.2,102.6");
+});
+
+
+test("building browsing groups rooms by floor and preserves entrance-only coverage", async () => {
+  const firstFloorRoom = { ...room, id: 11, name: "SC06-101", floor: 1 };
+  const defaultGet = api.get.getMockImplementation();
+  api.get.mockImplementation((url, options) => url === "/rooms/"
+    ? Promise.resolve({ data: [room, firstFloorRoom] })
+    : defaultGet(url, options));
+  await open("/");
+  expect(box.textContent).not.toContain("SC06-301");
+  await click("ดูห้อง ↓");
+  expect(box.textContent).toContain("SC06-101");
+  expect(box.textContent).not.toContain("SC06-301");
+  await act(async () => [...box.querySelectorAll(".cn-floors button")]
+    .find((node) => node.textContent === "ชั้น 3").click());
+  expect(box.textContent).toContain("SC06-301");
+  expect(box.textContent).not.toContain("SC06-101");
+  expect(button("ไปทางเข้าอาคาร")).toBeDefined();
+  expect(button("ไปห้องนี้")).toBeUndefined();
+});
+
+test("building-name search expands matching rooms and keeps DEMO separate", async () => {
+  usePlanApi();
+  await open("/");
+  const demoSection = box.querySelector(".cn-demo");
+  expect(demoSection.textContent).toContain(demoBuilding.name);
+  expect(box.querySelector('[aria-labelledby="room-results-heading"]').textContent)
+    .not.toContain(demoBuilding.name);
+  await search(campusBuilding.name); await submit();
+  expect(box.textContent).toContain("SC06-301");
+  expect(box.querySelector(".cn-demo")).toBeNull();
+});
+
+test("paused schedule redirects home without loading the course API", async () => {
+  await open("/schedule");
+  expect(window.location.pathname).toBe("/");
+  expect(box.textContent).toContain("จะไปห้องไหน?");
+  expect(api.get.mock.calls.some(([url]) => url === "/courses/")).toBe(false);
 });

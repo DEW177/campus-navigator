@@ -26,7 +26,7 @@ uvicorn app.main:app --reload
 ## 3. Frontend
 ```bash
 cd frontend
-npm install
+npm ci
 npm start
 ```
 
@@ -109,3 +109,15 @@ browsing, but cannot read the phone's location. See [CURRENT_LOCATION.md](CURREN
 for the complete flow and optional local HTTPS setup on port 3443.
 
 See [INDOOR_DATA.md](INDOOR_DATA.md) for the data contract and what to survey later.
+
+## Home page and current scope
+
+The home page initially shows building groups. Press **ดูห้อง** to expand a building
+and select a floor, or submit a room code/building name with **ค้นหา** or Enter.
+Search results expand matching rooms directly. The synthetic DEMO is shown in a
+separate section and retains its inline floor-plan browser.
+
+Outdoor routing is driving-only (including Google Maps links); indoor walking
+routes and stairs/lift preferences remain available. Chat/course APIs are paused
+and `/schedule` redirects home. Use `npm ci` with the committed frontend lockfile;
+Docker also uses this reproducible install.

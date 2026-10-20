@@ -5,7 +5,7 @@ Run with: pytest tests/
 import pytest
 from unittest.mock import MagicMock
 from app.utils.dijkstra import (
-    build_graph, find_shortest_path, NodeNotFoundError, RouteNotFoundError,
+    build_graph, find_shortest_path, NodeNotFoundError, RouteNotFoundError, GraphDataError,
 )
 
 
@@ -47,3 +47,19 @@ def test_missing_nodes(db, start, end, missing):
 def test_disconnected_nodes(db):
     with pytest.raises(RouteNotFoundError):
         find_shortest_path(db, 1, 4)
+
+
+@pytest.mark.parametrize("bidirectional", [False, True])
+def test_bad_incoming_one_way_edge_only_affects_reachable_area(db, bidirectional):
+    from app.models.connection import Connection
+    db.add(Connection(from_node_id=4, to_node_id=1, weight=-1, bidirectional=bidirectional))
+    db.commit()
+    if bidirectional:
+        with pytest.raises(GraphDataError):
+            find_shortest_path(db, 1, 3)
+    else:
+        path, distance = find_shortest_path(db, 1, 3)
+        assert [node.id for node in path] == [1, 2, 3]
+        assert distance == 12
+        with pytest.raises(GraphDataError):
+            find_shortest_path(db, 4, 3)

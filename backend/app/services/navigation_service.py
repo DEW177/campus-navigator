@@ -26,7 +26,10 @@ def calculate_route(db, start_id, end_id, route_mode="shortest"):
     if len(building_ids) != 1:
         raise GraphDataError("Routes across indoor buildings need an explicit outdoor transition")
     connections = {}
-    for edge in db.query(Connection).all():
+    path_ids = [node.id for node in path]
+    for edge in db.query(Connection).filter(
+        Connection.from_node_id.in_(path_ids), Connection.to_node_id.in_(path_ids)
+    ).all():
         if not usable_connection(edge, route_mode):
             continue
         pairs = [(edge.from_node_id, edge.to_node_id)]
