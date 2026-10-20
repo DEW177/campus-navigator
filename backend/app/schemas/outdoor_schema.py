@@ -18,4 +18,4 @@ class OutdoorRouteRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     origin: Coordinates
     building_id: int = Field(gt=0)
-    mode: Literal["walk", "drive"] = "walk"
+    mode: Literal["drive"] = "drive"

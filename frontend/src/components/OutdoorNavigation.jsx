@@ -28,7 +28,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
   const [searchedQuery, setSearchedQuery] = useState("");
   const [candidate, setCandidate] = useState(null);
   const [start, setStart] = useState(null);
-  const [mode, setMode] = useState("walk");
+  const mode = "drive";
   const [configured, setConfigured] = useState(null);
   const mapArea = useRef(null);
   const mapped = hasCoordinates(entrance);
@@ -141,10 +141,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
       {start && <div className="location-result">
         <p>จุดเริ่มต้น: <strong>{start.label}</strong>{start.source !== "gps" && " · คุณเลือกจุดนี้เอง"}</p>
         <button type="button" onClick={() => changeMethod(method)}>เปลี่ยนจุดเริ่มต้น</button>
-        <div className="route-mode-picker"><label htmlFor="outdoor-mode">เดินทางไปอาคารด้วยอะไร?</label>
-          <select id="outdoor-mode" value={mode} onChange={(event) => { route.reset(); setMode(event.target.value); }}>
-            <option value="walk">เดิน</option><option value="drive">ขับรถ</option>
-          </select></div>
+        <p>การเดินทาง: รถยนต์</p>
         <button type="button" className="primary-action" onClick={requestRoute}
           disabled={route.loading || configured === false || !!route.data}>
           {route.loading ? "กำลังหาเส้นทาง..." : route.data ? "แสดงเส้นทางแล้ว" : "ดูเส้นทางบนแผนที่"}
@@ -152,7 +149,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
         {route.loading && <p role="status">กำลังคำนวณเส้นทางกลางแจ้ง...</p>}
         {route.error && <p role="alert">{route.error}</p>}
         {route.data && <div className="outdoor-route-summary" role="status">
-          <p><strong>{mode === "walk" ? "เส้นทางเดิน" : "เส้นทางขับรถ"}: {distanceText(route.data.distance_m)}</strong>
+          <p><strong>เส้นทางขับรถ: {distanceText(route.data.distance_m)}</strong>
             {" · ประมาณ "}{timeText(route.data.duration_s)}</p>
           <p className="map-caption">เวลาโดยประมาณ ไม่รวมสภาพจราจรสดและการเดินภายในอาคาร</p>
           {route.data.start_gap_m > 20 && <p>จุดเริ่มเส้นทางบนถนน/ทางเดินห่างจากหมุด {distanceText(route.data.start_gap_m)} โปรดตรวจทางเชื่อมจริง</p>}
@@ -160,7 +157,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
           <Attribution />
         </div>}
         {mode === "drive" && <p>เส้นทางรถไปถึงจุดที่ถนนเข้าถึงใกล้อาคาร ยังไม่ได้ระบุที่จอดรถหรือยืนยันว่าขับถึงประตูได้</p>}
-        <p><a href={directionsUrl(start, entrance, mode)} target="_blank" rel="noopener noreferrer">
+        <p><a href={directionsUrl(start, entrance)} target="_blank" rel="noopener noreferrer">
           {isDemo ? "เปิดเส้นทางไปพิกัดตัวอย่างใน Google Maps" : "เปิดเส้นทางไปอาคารใน Google Maps"}</a></p>
       </div>}
       <p className="map-caption">แสดงเส้นทางเพื่อวางแผนการเดินทาง หมุดไม่ติดตามสด · ตรวจทางเดินและทางเข้าอาคารกับสภาพจริง</p>
