@@ -9,8 +9,9 @@ Direct API access during development: `http://localhost:8000/api`.
 - `POST /outdoor/search` → body `{ "query": "หอพัก ขอนแก่น", "building_id": 1 }`;
   response `results: [{ label, latitude, longitude, attribution }]`. Empty results are valid.
   Search is submitted explicitly, limited to Thailand, and biased toward the building entrance.
-- `POST /outdoor/route` → body `{ "origin": { "latitude": 16.45, "longitude": 102.8 }, "building_id": 1, "mode": "walk" }`;
-  mode is `walk` or `drive`. Destination comes from the validated entrance in the database.
+- `POST /outdoor/route` → body `{ "origin": { "latitude": 16.45, "longitude": 102.8 }, "building_id": 1, "mode": "drive" }`;
+  mode is `drive` (also the default when omitted). `walk` is rejected with 422.
+  Destination comes from the validated entrance in the database.
   Response: `geometry` (GeoJSON MultiLineString, **longitude then latitude**), `distance_m`,
   `duration_s`, `mode`, `entrance`, `is_demo`, `start_gap_m`, `end_gap_m`.
   Gaps indicate how far provider geometry endpoints lie from the requested positions.
@@ -75,17 +76,18 @@ Successful responses have `Cache-Control: no-store`. See [setup and limits](OUTD
   Clients should check the HTTP status and `detail.code` before using `path`.
   Unreachable routes do not return an infinite distance.
 
-## Courses
-- `GET /courses/` - list all courses with their room locations
+## Paused features
 
-## Chat
-- `POST /chat/ask`
-  ```json
-  { "message": "How do I get to SC06-301?" }
-  ```
+Course schedules and chat are paused. Their source files and course data remain,
+but `/courses/` and `/chat/ask` are not registered and return 404. The frontend
+`/schedule` URL redirects to `/`.
 
 ## Search to navigation flow
-- Start at `/`, search with `GET /rooms/?search=SC06`, then open `/navigate?room=<id>&q=<query>`.
+- Start at `/`. The home page loads `GET /buildings/` and `GET /rooms/` once,
+  groups rooms by building/floor, and filters locally on Search/Enter by room name,
+  building name or building code. The room API's `search` parameter still filters
+  room names only; the expanded home search is a frontend behavior.
+- Select a room to open `/navigate?room=<id>&q=<query>`.
 - Room responses include `entrance`, either null or `{node_id, label, floor_id, floor, latitude, longitude}`.
   It is the building's designated entry, validated against the indoor building/floor/coordinates.
   Null latitude/longitude means there is no geographic road-map destination. The synthetic DEMO
@@ -108,8 +110,10 @@ The home page preserves search in `/?q=...`. Legacy `/search` links redirect hom
 
 ## Outdoor map display
 The app shows the designated entrance and the latest device fix with an accuracy circle. These
-are positions, not a route; road routing opens in Google Maps and allows the user to choose a
-travel mode there. No straight line is invented between home and campus, and GPS does not
+are positions, not a route. An explicit route request obtains driving geometry,
+distance and estimated duration from Geoapify when configured. Google Maps is an
+optional driving handoff, including when the provider is unavailable. No straight
+line is invented between home and campus, and GPS does not
 imply an indoor floor or automatic arrival. See [CURRENT_LOCATION.md](CURRENT_LOCATION.md).
 
 ## Indoor navigation
@@ -146,13 +150,18 @@ are served at the API server's `/static/` path (outside the `/api` prefix).
 
 Malformed map geometry, unsupported indoor/outdoor mixing, invalid floor
 transitions or invalid edge weights return `409` with
-`detail.code = "INVALID_MAP_DATA"`. Invalid route modes return `422`.
+`detail.code = "INVALID_MAP_DATA"`. Active edge weights are validated only in
+the area reachable from the requested start under the selected mode/direction.
+Malformed weights in a disconnected area do not disable other routes; reachable
+malformed edges still fail closed. Invalid route modes return `422`.
 Distances in the demo include simulated vertical travel; they are not travel-time
 estimates. No automatic indoor location tracking is provided.
 
 ## Browse floor plans from the current page
 
-The home page and outdoor navigation page include a **ดูผังอาคารทดลอง** button.
+The home page includes a **ดูผังอาคารทดลอง** button within the separate DEMO section
+when that section matches the submitted search (or no search is active). The outdoor
+navigation page also includes the button for destinations without an indoor plan.
 It opens a modal on the same page: choose a floor, then select a room from its
 marker popup or the room list. **ไปห้องนี้** opens that room's navigation URL and
 retains the existing search query. Indoor destinations instead show a button with

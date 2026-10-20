@@ -11,9 +11,10 @@ or a fresh database. The migration adds tables/columns and preserves existing da
 | building_entrances | One designated entrance node and optional surveyed geographic coordinates per building |
 | floors      | Building floor, plan URL, image dimensions and metric scale |
 | nodes       | Points in the walkable graph (intersections, doors)   |
-| connections | Weighted edges between nodes, used by Dijkstra/A*     |
+| connections | Weighted edges between nodes, used by Dijkstra     |
 | rooms       | Rooms, linked to a building and an entry node         |
-| courses     | Course sections, linked to a room                     |
+| outdoor_usage | Daily shared provider request count and next allowed request time |
+| courses     | Course sections retained while schedules are paused                     |
 
 Nodes/Connections are kept separate from Rooms/Buildings so that pathfinding
 queries stay fast and independent of room/building metadata (per the

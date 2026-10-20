@@ -1,6 +1,6 @@
 """
 Haversine distance calculation - straight-line distance between two
-lat/lng points on Earth's surface. Useful as the heuristic h(n) for A*.
+lat/lng points on Earth's surface, used to report gaps to road-route endpoints.
 """
 import math
 

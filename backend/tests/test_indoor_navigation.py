@@ -92,7 +92,7 @@ def test_invalid_coordinates_and_transitions_fail_clearly(client, db, demo):
 def test_invalid_weight_and_mode(client, db, demo):
     request = endpoints(db, demo)
     assert client.post("/api/navigate/", json={**request, "route_mode": "teleport"}).status_code == 422
-    db.query(Connection).first().weight = -1
+    db.query(Connection).filter_by(from_node_id=request["start_node_id"]).first().weight = -1
     db.commit()
     assert client.post("/api/navigate/", json=request).status_code == 409
 
@@ -127,3 +127,12 @@ def test_import_rejects_bad_floor_geometry_and_connections():
     next(e for e in data["connections"] if e["kind"] == "stairs")["kind"] = "walk"
     with pytest.raises(ValueError, match="Cross-floor"):
         validate_data(data)
+
+
+def test_invalid_weight_in_disconnected_area_does_not_block_indoor_route(client, db, demo):
+    # The fixture's legacy outdoor graph is disconnected from the demo building.
+    db.query(Connection).filter_by(from_node_id=1).first().weight = -1
+    db.commit()
+    response = client.post("/api/navigate/", json=endpoints(db, demo))
+    assert response.status_code == 200
+    assert response.json()["total_distance"] == pytest.approx(36.5)
