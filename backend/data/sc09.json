@@ -1,0 +1,180 @@
+{
+  "building": {
+    "code": "SC09",
+    "name": "SC09 อาคารวิทยวิภาส",
+    "latitude": 16.4756894,
+    "longitude": 102.8251242,
+    "is_demo": false
+  },
+  "source_map_url": "https://maps.app.goo.gl/w9RiY3P5ZWZWrbyJ6",
+  "destination_kind": "building",
+  "approach_description": "จากทางเข้าอาคาร เดินผ่านโถงบริเวณลิฟต์และตู้โชว์ ไปยังประตูเข้าส่วนสาขาวิชาวิทยาการคอมพิวเตอร์ ซึ่งเชื่อมกับประตูซ้ายล่างของผังชั้น 1 หมุดแผนที่ระบุบริเวณอาคาร ไม่ใช่ตำแหน่งประตูหรือจุดจอดรถที่ยืนยันแล้ว",
+  "approach_image_url": "/static/sc09/approach.png",
+  "floors": [
+    {
+      "number": 1,
+      "name": "ชั้น 1",
+      "image_url": "/static/sc09/floor-1.svg",
+      "width": 850,
+      "height": 1276
+    },
+    {
+      "number": 2,
+      "name": "ชั้น 2",
+      "image_url": "/static/sc09/floor-2.svg",
+      "width": 851,
+      "height": 1276
+    },
+    {
+      "number": 3,
+      "name": "ชั้น 3",
+      "image_url": "/static/sc09/floor-3.svg",
+      "width": 850,
+      "height": 1276
+    },
+    {
+      "number": 4,
+      "name": "ชั้น 4",
+      "image_url": "/static/sc09/floor-4.svg",
+      "width": 851,
+      "height": 1276
+    },
+    {
+      "number": 5,
+      "name": "ชั้น 5",
+      "image_url": "/static/sc09/floor-5.svg",
+      "width": 851,
+      "height": 1276
+    }
+  ],
+  "rooms": [
+    {
+      "name": "LEC 9107",
+      "floor": 1
+    },
+    {
+      "name": "LEC 9108",
+      "floor": 1
+    },
+    {
+      "name": "สารบรรณ",
+      "floor": 1
+    },
+    {
+      "name": "ห้องโถง",
+      "floor": 1
+    },
+    {
+      "name": "9221",
+      "floor": 2
+    },
+    {
+      "name": "9222",
+      "floor": 2
+    },
+    {
+      "name": "9223",
+      "floor": 2
+    },
+    {
+      "name": "9224",
+      "floor": 2
+    },
+    {
+      "name": "9225",
+      "floor": 2
+    },
+    {
+      "name": "LAB 9226",
+      "floor": 2
+    },
+    {
+      "name": "LAB 9227",
+      "floor": 2
+    },
+    {
+      "name": "LAB 9228",
+      "floor": 2
+    },
+    {
+      "name": "ห้องเรียน 9230",
+      "floor": 2
+    },
+    {
+      "name": "ห้องประชุม 9231",
+      "floor": 2
+    },
+    {
+      "name": "ห้องอาหาร",
+      "floor": 3
+    },
+    {
+      "name": "ห้องประชุม ชั้น 3",
+      "floor": 3
+    },
+    {
+      "name": "LAB 9421",
+      "floor": 4
+    },
+    {
+      "name": "LAB 9422",
+      "floor": 4
+    },
+    {
+      "name": "ห้องเรียน 9423",
+      "floor": 4
+    },
+    {
+      "name": "9424",
+      "floor": 4
+    },
+    {
+      "name": "9425",
+      "floor": 4
+    },
+    {
+      "name": "ห้องเรียน 9427",
+      "floor": 4
+    },
+    {
+      "name": "ห้องประชุม 9428",
+      "floor": 4
+    },
+    {
+      "name": "ห้องวิจัย 9516",
+      "floor": 5
+    },
+    {
+      "name": "9520",
+      "floor": 5
+    },
+    {
+      "name": "9521",
+      "floor": 5
+    },
+    {
+      "name": "9522",
+      "floor": 5
+    },
+    {
+      "name": "9523",
+      "floor": 5
+    },
+    {
+      "name": "LAB NETWORK 9524",
+      "floor": 5
+    },
+    {
+      "name": "LAB 9525",
+      "floor": 5
+    },
+    {
+      "name": "ห้องเรียน 9527",
+      "floor": 5
+    },
+    {
+      "name": "ห้องบันทึกเสียง 9528",
+      "floor": 5
+    }
+  ]
+}

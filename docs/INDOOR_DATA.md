@@ -1,6 +1,10 @@
 # Indoor navigation data
 
-The included building is entirely simulated. Its plans, room numbers, landmark
+SC09 real-building reference plans are now included separately; see [SC09.md](SC09.md).
+They can be browsed but are not a surveyed metric graph. Floors with
+`routing_ready=false` expose no metric scale and cannot be used for indoor routes.
+
+The DEMO building is entirely simulated. Its plans, room numbers, landmark
 illustrations and distances do not describe Khon Kaen University or any real
 building. It supports developing and demonstrating the complete navigation flow
 while real data is being collected.

@@ -5,6 +5,7 @@ import MapStartPicker from "./MapStartPicker";
 import useCurrentLocation from "../hooks/useCurrentLocation";
 import useOutdoorRequest from "../hooks/useOutdoorRequest";
 import api from "../services/api";
+import { mapAssetUrl } from "../services/mapService";
 import { hasCoordinates, directionsUrl, destinationUrl, mapsLocationUrl } from "../utils/location";
 
 const distanceText = (meters) => meters < 1000 ? `${Math.round(meters)} เมตร` : `${(meters / 1000).toFixed(1)} กม.`;
@@ -32,6 +33,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
   const [configured, setConfigured] = useState(null);
   const mapArea = useRef(null);
   const mapped = hasCoordinates(entrance);
+  const nearBuilding = entrance?.destination_kind === "building";
   const routeReset = route.reset;
   const currentPosition = gps.position;
 
@@ -75,8 +77,9 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
   const displayedPosition = candidate || start;
 
   return <section className="outdoor-navigation" aria-labelledby="outdoor-heading">
-    <h3 id="outdoor-heading">ไปยังทางเข้าอาคาร</h3>
+    <h3 id="outdoor-heading">{nearBuilding ? "ไปยังบริเวณอาคาร" : "ไปยังทางเข้าอาคาร"}</h3>
     {mapped ? <>
+      {nearBuilding && <p className="service-notice">หมุดปลายทางระบุบริเวณอาคาร ไม่ใช่ตำแหน่งประตูทางเข้าหรือจุดจอดรถที่ยืนยันแล้ว</p>}
       {isDemo && <p className="demo-badge">พิกัดปลายทางเป็นข้อมูลตัวอย่าง ยังไม่ได้ยืนยันทางเข้าอาคารจริง</p>}
       <p>เริ่มจากที่ไหน? ใช้ตำแหน่งปัจจุบัน ค้นหาที่อยู่ หรือเลือกบนแผนที่</p>
       <div className="start-methods" role="group" aria-label="เลือกวิธีระบุจุดเริ่มต้น">
@@ -153,7 +156,7 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
             {" · ประมาณ "}{timeText(route.data.duration_s)}</p>
           <p className="map-caption">เวลาโดยประมาณ ไม่รวมสภาพจราจรสดและการเดินภายในอาคาร</p>
           {route.data.start_gap_m > 20 && <p>จุดเริ่มเส้นทางบนถนน/ทางเดินห่างจากหมุด {distanceText(route.data.start_gap_m)} โปรดตรวจทางเชื่อมจริง</p>}
-          {route.data.end_gap_m > 20 && <p>ปลายเส้นทางห่างจากทางเข้าอาคาร {distanceText(route.data.end_gap_m)} ยังไม่มีข้อมูลทางเชื่อมช่วงสุดท้าย</p>}
+          {route.data.end_gap_m > 20 && <p>ปลายเส้นทางห่างจาก{nearBuilding ? "หมุดบริเวณอาคาร" : "ทางเข้าอาคาร"} {distanceText(route.data.end_gap_m)} ยังไม่มีข้อมูลทางเชื่อมช่วงสุดท้าย</p>}
           <Attribution />
         </div>}
         {mode === "drive" && <p>เส้นทางรถไปถึงจุดที่ถนนเข้าถึงใกล้อาคาร ยังไม่ได้ระบุที่จอดรถหรือยืนยันว่าขับถึงประตูได้</p>}
@@ -166,5 +169,13 @@ export default function OutdoorNavigation({ buildingId, entrance, isDemo, hasInd
     </> : <p role="status">{isDemo
       ? "อาคารนี้เป็นอาคารจำลอง ไม่มีพิกัดสำหรับเดินทางจริง ทดลองเส้นทางจากทางเข้าในผังด้านล่างได้"
       : "อาคารนี้ยังไม่มีพิกัดทางเข้า คุณยังดูผังห้องและเส้นทางภายในที่มีข้อมูลได้"}</p>}
+    {entrance?.approach_description && <section aria-label="วิธีเข้าสู่อาคาร">
+      <h4>จากบริเวณอาคารเข้าสู่ผังชั้น 1</h4>
+      <p>{entrance.approach_description}</p>
+      {entrance.approach_image_url && <a href={mapAssetUrl(entrance.approach_image_url)} target="_blank" rel="noopener noreferrer">
+        <img src={mapAssetUrl(entrance.approach_image_url)} alt="ผังโถงทางเข้า แสดงลิฟต์ ตู้โชว์ และประตูเข้าส่วนสาขาวิชาวิทยาการคอมพิวเตอร์" style={{ width: "100%", maxWidth: 700, height: "auto" }} />
+        ดูภาพทางเข้าขนาดเต็ม
+      </a>}
+    </section>}
   </section>;
 }

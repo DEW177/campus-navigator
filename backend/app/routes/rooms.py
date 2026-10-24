@@ -16,7 +16,7 @@ def room_summary(room):
     position = None
     scope = "unavailable"
     if (room.floor_id is not None and node is not None and node.floor_id == room.floor_id
-            and floor is not None and floor.building_id == room.building_id
+            and floor is not None and floor.routing_ready and floor.building_id == room.building_id
             and floor.number == room.floor == node.floor and node.kind == "door"
             and node.x is not None and node.y is not None
             and math.isfinite(node.x) and math.isfinite(node.y)

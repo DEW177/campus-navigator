@@ -23,4 +23,7 @@ def entrance_summary(building):
         mapped = False
     return {"node_id": node.id, "label": node.label or f"ทางเข้า {building.name}",
             "floor_id": node.floor_id, "floor": node.floor,
-            "latitude": lat if mapped else None, "longitude": lon if mapped else None}
+            "latitude": lat if mapped else None, "longitude": lon if mapped else None,
+            "destination_kind": entrance.destination_kind,
+            "approach_description": node.landmark_description,
+            "approach_image_url": node.landmark_image_url}

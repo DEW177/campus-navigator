@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, Float, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, ForeignKey
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 
@@ -15,5 +15,6 @@ class BuildingEntrance(Base):
     node_id = Column(Integer, ForeignKey("nodes.id"), nullable=False)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
+    destination_kind = Column(String, nullable=False, default="entrance", server_default="entrance")
     building = relationship("Building", back_populates="entrance")
     node = relationship("Node")

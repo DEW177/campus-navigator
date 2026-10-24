@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Simulate } from "react-dom/test-utils";
 import App from "../App";
 import api from "../services/api";
-jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn() } }));
+jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn(), post: jest.fn(), defaults: { baseURL: "/api" } } }));
 jest.mock("../components/CampusMap", () => () => <div />);
 jest.mock("../components/LocationMarkers", () => () => null);
 jest.mock("../components/MapStartPicker", () => () => null);
@@ -55,6 +55,41 @@ async function reloadApp() { await act(async () => root.unmount()); root = creat
 function useIndoorApi(selected = indoorRoom) {
   api.get.mockImplementation((url) => Promise.resolve({ data: url === "/floors/" ? indoorFloors : selected }));
 }
+
+test("SC09 search opens real plans and the building destination without claiming an indoor route", async () => {
+  const building = { id: 9, code: "SC09", name: "SC09 อาคารวิทยวิภาส", is_demo: false };
+  const floors = [1, 2, 3, 4, 5].map((number) => ({ id: 90 + number, number, name: `ชั้น ${number}`, routing_ready: false }));
+  const sc09Room = { id: 90, name: "LAB 9228", floor: 2, floor_id: 92,
+    building_id: 9, building_name: building.name, is_demo: false,
+    navigation_scope: "unavailable", navigation_node_id: null,
+    entrance: { node_id: 90, label: "จุดหมายบริเวณ SC09", floor_id: null,
+      destination_kind: "building", latitude: 16.4756894, longitude: 102.8251242,
+      approach_description: "ผ่านโถงเข้าสู่ประตูซ้ายล่างของผังชั้น 1",
+      approach_image_url: "/static/sc09/approach.png" } };
+  api.get.mockImplementation((url) => Promise.resolve({ data:
+    url === "/buildings/" ? [building] : url === "/rooms/" ? [sc09Room]
+      : url === "/rooms/90" ? sc09Room : url === "/floors/" ? floors : { configured: false } }));
+  await open("/"); await search("9228"); await submit();
+  await click("ดูผังและไปบริเวณอาคาร");
+  expect(box.textContent).toContain("ปลายทาง: LAB 9228");
+  expect(box.textContent).toContain("หมุดปลายทางระบุบริเวณอาคาร");
+  expect(box.textContent).toContain("ประตูซ้ายล่าง");
+  expect(box.querySelector('img[src$="/static/sc09/approach.png"]')).not.toBeNull();
+  expect(box.querySelector("#route-mode")).toBeNull();
+  expect(button("ดูเส้นทางจากทางเข้าไปห้อง")).toBeUndefined();
+  expect(api.post).not.toHaveBeenCalled();
+  await click("ดูผังชั้น 2 · ห้อง LAB 9228");
+  expect(box.querySelector("dialog h2").textContent).toContain(building.name);
+  await act(async () => [...box.querySelectorAll("dialog .floor-selector button")]
+    .find((node) => node.textContent === "ชั้น 5").click());
+  expect(box.querySelector('dialog [data-testid="floor-map"]').dataset.floor).toBe("95");
+  await click("กลับไปแผนที่");
+  await click("นำทางจากตำแหน่งของฉัน");
+  const link = new URL(box.querySelector('a[href*="/maps/dir/"]').href);
+  expect(link.searchParams.get("destination")).toBe("16.4756894,102.8251242");
+  expect(link.searchParams.get("travelmode")).toBe("driving");
+  expect(api.post).not.toHaveBeenCalled();
+});
 
 test("search -> room -> device location without a start picker or node request", async () => {
   await open("/"); await search("SC06"); await submit();

@@ -35,6 +35,7 @@ export default function FloorMap({ floor, route, fitRequest = 0, rooms = [], sel
   const visibleNodes = [...new Map(segments.flat().filter((node) => node.label).map((node) => [node.id, node])).values()];
   return (
     <>
+      {floor.routing_ready === false && <p role="status">ผังอ้างอิงสถานที่จริง ยังไม่ได้ยืนยันมาตราส่วนและตำแหน่งประตู จึงยังไม่แสดงเส้นทางหรือระยะทางในอาคาร</p>}
       {imageError && <p role="alert">โหลดแผนผังไม่ได้ ลองเปลี่ยนชั้นหรือใช้ขั้นตอนด้านล่าง</p>}
       <div className="navigation-map indoor-map" role="region" aria-label={`แผนผัง${floor.name}`}>
         <MapContainer key={floor.id} crs={CRS.Simple} bounds={[[0, 0], [floor.height, floor.width]]}
