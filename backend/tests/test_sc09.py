@@ -27,7 +27,12 @@ def test_sc09_is_searchable_with_five_plans_and_no_invented_door_or_scale(client
     for floor in floors:
         assert floor["routing_ready"] is False and floor["meters_per_unit"] is None
         asset = client.get(floor["image_url"])
-        assert asset.status_code == 200 and "data:image/png;base64," in asset.text
+        assert floor["image_url"].endswith(".png")
+        assert asset.status_code == 200 and asset.headers["content-type"] == "image/png"
+        assert asset.content[:8] == b"\x89PNG\r\n\x1a\n"
+        # PNG IHDR dimensions must match the floor coordinate system.
+        import struct
+        assert struct.unpack(">II", asset.content[16:24]) == (floor["width"], floor["height"])
     assert client.get(entrance["approach_image_url"]).status_code == 200
     for room in rooms:
         detail = client.get(f'/api/rooms/{room["id"]}').json()
