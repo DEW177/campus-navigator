@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, UniqueConstraint, CheckConstraint
+from sqlalchemy import Column, Integer, String, Float, Boolean, ForeignKey, UniqueConstraint, CheckConstraint
 from sqlalchemy.orm import relationship
 from app.database.database import Base
 
@@ -17,4 +17,5 @@ class Floor(Base):
     width = Column(Float, nullable=False)
     height = Column(Float, nullable=False)
     meters_per_unit = Column(Float, nullable=False)
+    routing_ready = Column(Boolean, nullable=False, default=True, server_default="true")
     building = relationship("Building")

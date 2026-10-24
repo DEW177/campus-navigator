@@ -26,6 +26,12 @@ It includes 3 simulated floor plans, 9 rooms and step-by-step directions.
 Real campus plans and surveyed paths are still needed before using it on site.
 See [the indoor data guide](docs/INDOOR_DATA.md).
 
+**SC09 อาคารวิทยวิภาส** is also available as a real-building reference: search
+SC09 or 9228 to browse five supplied floor plans, view the entrance drawing,
+and plan a driving route to the accepted building-area pin. SC09 indoor route
+calculation remains unavailable until doors, paths and distances are surveyed.
+See [SC09 data and limitations](docs/SC09.md). Existing databases are preserved.
+
 The original SC06/RC01 sample routes reach building entrances only; the app labels
 this limitation explicitly. Indoor navigation choices survive refresh, and requested
 routes are recalculated using current data. For phone access on the same Wi-Fi,

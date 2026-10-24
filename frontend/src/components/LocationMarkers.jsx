@@ -24,7 +24,7 @@ export default function LocationMarkers({ entrance, position, route }) {
       pathOptions={{ color: "#1d4ed8", weight: 6, opacity: 0.85 }} />}
     <CircleMarker center={[entrance.latitude, entrance.longitude]} radius={10}
       pathOptions={{ color: "white", weight: 2, fillColor: "#b91c1c", fillOpacity: 1 }}>
-      <Tooltip permanent direction="top">ทางเข้าอาคาร</Tooltip>
+      <Tooltip permanent direction="top">{entrance.destination_kind === "building" ? "บริเวณอาคาร" : "ทางเข้าอาคาร"}</Tooltip>
       <Popup>{entrance.label}</Popup>
     </CircleMarker>
     {position && <>

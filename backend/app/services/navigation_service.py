@@ -15,6 +15,8 @@ def calculate_route(db, start_id, end_id, route_mode="shortest"):
         return NavigationResponse(path=path, total_distance=distance, is_demo=sample is not None)
     floors = db.query(Floor).filter(Floor.id.in_(floor_ids)).all()
     floor_by_id = {floor.id: floor for floor in floors}
+    if any(not floor.routing_ready for floor in floors):
+        raise GraphDataError("Reference floor plans are not ready for metric routing")
     for node in path:
         floor = floor_by_id.get(node.floor_id)
         if floor is None or node.x is None or node.y is None or not (
