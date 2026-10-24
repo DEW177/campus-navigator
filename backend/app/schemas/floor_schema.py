@@ -13,6 +13,15 @@ class FloorOut(BaseModel):
     meters_per_unit: float | None
     routing_ready: bool = True
 
+    @field_serializer("image_url")
+    def public_image(self, value):
+        # Existing SC09 imports retain their original SVG paths. Return the
+        # standalone raster with the exact same viewport dimensions, so old
+        # databases work without overwriting any surveyed data.
+        replacements = {f"/static/sc09/floor-{n}.svg": f"/static/sc09/floor-{n}.png"
+                        for n in range(1, 6)}
+        return replacements.get(value, value)
+
     @field_serializer("meters_per_unit")
     def public_scale(self, value):
         # Unmeasured source drawings have no public metric scale.
